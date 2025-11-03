@@ -37,7 +37,7 @@ const glassesList = [
     name: "Aviator Gold",
     suitableFaceShape: ["square", "round", "triangle"],
     minFaceWidth: 0.18,
-    maxFaceWidth: 0.40,
+    maxFaceWidth: 0.4,
     scaleMultiplier: 1.8,
   },
   {
@@ -71,7 +71,7 @@ export default function CameraView() {
   const [autoMode, setAutoMode] = useState(true);
   const [faceAnalysis, setFaceAnalysis] = useState(null);
   const [recommendedGlass, setRecommendedGlass] = useState(null);
-  
+
   // CHẾ ĐỘ NHIỀU NGƯỜI
   const [multiPersonMode, setMultiPersonMode] = useState(false);
   const [personGlasses, setPersonGlasses] = useState({}); // {faceIndex: glassIndex}
@@ -83,7 +83,7 @@ export default function CameraView() {
     if (!faceLandmarks || faceLandmarks.length === 0) return null;
 
     const face = faceLandmarks[0];
-    
+
     // Lấy các điểm quan trọng
     const leftEye = face[33];
     const rightEye = face[263];
@@ -94,16 +94,16 @@ export default function CameraView() {
 
     // Tính khoảng cách mắt (face width)
     const eyeDistance = Math.abs(rightEye.x - leftEye.x);
-    
+
     // Tính chiều cao khuôn mặt
     const faceHeight = Math.abs(chin.y - forehead.y);
-    
+
     // Tính chiều rộng khuôn mặt (từ má trái sang má phải)
     const faceWidth = Math.abs(rightCheek.x - leftCheek.x);
-    
+
     // Tỷ lệ khuôn mặt
     const faceRatio = faceWidth / faceHeight;
-    
+
     // Phân loại hình dạng khuôn mặt
     let faceShape = "oval";
     if (faceRatio > 0.85) {
@@ -124,9 +124,8 @@ export default function CameraView() {
         eyeDistance <= glass.maxFaceWidth
     );
 
-    const recommended = suitableGlasses.length > 0 
-      ? suitableGlasses[0] 
-      : glassesList[0];
+    const recommended =
+      suitableGlasses.length > 0 ? suitableGlasses[0] : glassesList[0];
 
     return {
       eyeDistance,
@@ -177,18 +176,18 @@ export default function CameraView() {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       const results = faceLandmarker.detectForVideo(video, performance.now());
-      
+
       // CẬP NHẬT SỐ KHUÔN MẶT
       const numFaces = results.faceLandmarks?.length || 0;
       setDetectedFaces(numFaces);
-      
+
       if (results.faceLandmarks?.length > 0) {
         // Phân tích khuôn mặt đầu tiên
         const analysis = analyzeFaceAndRecommend(results.faceLandmarks);
-        
+
         if (analysis) {
           setFaceAnalysis(analysis);
-          
+
           // Tự động chọn mắt kính (chỉ ở mode đơn)
           if (autoMode && !multiPersonMode && analysis.recommendedGlass) {
             const recommendedIndex = glassesList.findIndex(
@@ -205,38 +204,38 @@ export default function CameraView() {
         results.faceLandmarks.forEach((face, faceIndex) => {
           const leftEye = face[33];
           const rightEye = face[263];
-          
+
           // Tính khoảng cách và góc nghiêng
           const eyeCenterX = ((leftEye.x + rightEye.x) / 2) * canvas.width;
           const eyeCenterY = ((leftEye.y + rightEye.y) / 2) * canvas.height;
-          
+
           const dx = (rightEye.x - leftEye.x) * canvas.width;
           const dy = (rightEye.y - leftEye.y) * canvas.height;
           const angle = Math.atan2(dy, dx);
-          
+
           // Tính khoảng cách giữa 2 mắt để scale
           const eyeDistance = Math.hypot(dx, dy);
-          
+
           // Lấy mắt kính cho người này
           let currentGlassIndex = glassIndex;
           if (multiPersonMode && personGlasses[faceIndex] !== undefined) {
             currentGlassIndex = personGlasses[faceIndex];
           }
-          
+
           const currentGlass = glassesList[currentGlassIndex];
           const scaleMultiplier = currentGlass.scaleMultiplier || 1.6;
-          
+
           // Tự động điều chỉnh kích thước
           const glassWidth = eyeDistance * scaleMultiplier;
           const glassHeight = glassWidth * 0.35;
-          
+
           // Điều chỉnh vị trí Y
           const offsetY = eyeDistance * 0.03;
 
           const glassesImg = new Image();
           glassesImg.src = currentGlass.url;
           glassesImg.crossOrigin = "anonymous";
-          
+
           ctx.save();
           ctx.translate(eyeCenterX, eyeCenterY - offsetY);
           ctx.rotate(angle);
@@ -248,27 +247,28 @@ export default function CameraView() {
             glassHeight
           );
           ctx.restore();
-          
+
           // VẼ SỐ THỨ TỰ NGƯỜI
           if (multiPersonMode && numFaces > 1) {
             ctx.save();
-            ctx.fillStyle = selectedPerson === faceIndex 
-              ? "rgba(34, 197, 94, 0.9)" 
-              : "rgba(59, 130, 246, 0.9)";
+            ctx.fillStyle =
+              selectedPerson === faceIndex
+                ? "rgba(34, 197, 94, 0.9)"
+                : "rgba(59, 130, 246, 0.9)";
             ctx.strokeStyle = "white";
             ctx.lineWidth = 3;
             ctx.font = "bold 24px Arial";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            
+
             const labelX = eyeCenterX;
             const labelY = eyeCenterY - eyeDistance * 0.6;
-            
+
             ctx.beginPath();
             ctx.arc(labelX, labelY, 20, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            
+
             ctx.fillStyle = "white";
             ctx.fillText((faceIndex + 1).toString(), labelX, labelY);
             ctx.restore();
@@ -286,9 +286,9 @@ export default function CameraView() {
           const g = data[i + 1];
           const b = data[i + 2];
           // Chuyển đổi màu theo công thức deuteranopia
-          data[i] = 0.625 * r + 0.375 * g;     // Red
-          data[i + 1] = 0.7 * r + 0.3 * g;     // Green
-          data[i + 2] = 0.3 * g + 0.7 * b;     // Blue
+          data[i] = 0.625 * r + 0.375 * g; // Red
+          data[i + 1] = 0.7 * r + 0.3 * g; // Green
+          data[i + 2] = 0.3 * g + 0.7 * b; // Blue
         }
         ctx.putImageData(imageData, 0, 0);
       } else if (filter === "nearsighted") {
@@ -301,34 +301,38 @@ export default function CameraView() {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
-        
+
         // Tạo gradient radial blur
-        const tempCanvas = document.createElement('canvas');
+        const tempCanvas = document.createElement("canvas");
         tempCanvas.width = canvas.width;
         tempCanvas.height = canvas.height;
-        const tempCtx = tempCanvas.getContext('2d');
+        const tempCtx = tempCanvas.getContext("2d");
         tempCtx.drawImage(canvas, 0, 0);
-        
+
         // Vẽ lớp blur ở giữa
         ctx.filter = "blur(10px)";
         ctx.globalAlpha = 0.8;
         ctx.drawImage(tempCanvas, 0, 0);
         ctx.filter = "none";
         ctx.globalAlpha = 1.0;
-        
+
         // Tạo gradient mask để viền rõ hơn
         const gradient = ctx.createRadialGradient(
-          centerX, centerY, 0,
-          centerX, centerY, maxRadius * 0.6
+          centerX,
+          centerY,
+          0,
+          centerX,
+          centerY,
+          maxRadius * 0.6
         );
-        gradient.addColorStop(0, 'rgba(255,255,255,0)');
-        gradient.addColorStop(1, 'rgba(255,255,255,1)');
-        
-        ctx.globalCompositeOperation = 'destination-out';
+        gradient.addColorStop(0, "rgba(255,255,255,0)");
+        gradient.addColorStop(1, "rgba(255,255,255,1)");
+
+        ctx.globalCompositeOperation = "destination-out";
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.globalCompositeOperation = 'source-over';
-        
+        ctx.globalCompositeOperation = "source-over";
+
         // Vẽ lại phần viền rõ
         ctx.globalAlpha = 0.3;
         ctx.drawImage(tempCanvas, 0, 0);
@@ -353,16 +357,20 @@ export default function CameraView() {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
-        
+
         // Tạo hiệu ứng đen viền (mất thị giác ngoại vi)
         const gradient = ctx.createRadialGradient(
-          centerX, centerY, maxRadius * 0.3,
-          centerX, centerY, maxRadius * 0.8
+          centerX,
+          centerY,
+          maxRadius * 0.3,
+          centerX,
+          centerY,
+          maxRadius * 0.8
         );
-        gradient.addColorStop(0, 'rgba(0,0,0,0)');
-        gradient.addColorStop(0.7, 'rgba(0,0,0,0.5)');
-        gradient.addColorStop(1, 'rgba(0,0,0,0.9)');
-        
+        gradient.addColorStop(0, "rgba(0,0,0,0)");
+        gradient.addColorStop(0.7, "rgba(0,0,0,0.5)");
+        gradient.addColorStop(1, "rgba(0,0,0,0.9)");
+
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       } else if (filter === "diabetic") {
@@ -370,7 +378,7 @@ export default function CameraView() {
         ctx.filter = "blur(2px) contrast(0.9)";
         ctx.drawImage(canvas, 0, 0);
         ctx.filter = "none";
-        
+
         // Thêm các đốm đen ngẫu nhiên
         ctx.fillStyle = "rgba(0,0,0,0.7)";
         for (let i = 0; i < 20; i++) {
@@ -387,7 +395,16 @@ export default function CameraView() {
     };
     animationId = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animationId);
-  }, [faceLandmarker, filter, glassIndex, autoMode, analyzeFaceAndRecommend, multiPersonMode, personGlasses, selectedPerson]);
+  }, [
+    faceLandmarker,
+    filter,
+    glassIndex,
+    autoMode,
+    analyzeFaceAndRecommend,
+    multiPersonMode,
+    personGlasses,
+    selectedPerson,
+  ]);
 
   const capture = async () => {
     const canvas = canvasRef.current;
@@ -410,50 +427,59 @@ export default function CameraView() {
     <div className="flex flex-col items-center px-4 py-6">
       {/* Video Container với border đẹp - KHUNG TO HƠN */}
       <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-gradient w-full max-w-5xl">
-        <Webcam 
-          ref={webcamRef} 
-          mirrored 
-          width={1200} 
+        <Webcam
+          ref={webcamRef}
+          mirrored
+          width={1200}
           height={900}
           className="rounded-xl w-full"
           videoConstraints={{
             width: 1920,
             height: 1080,
             facingMode: "user",
-            aspectRatio: 1.333
+            aspectRatio: 1.333,
           }}
         />
-        <canvas ref={canvasRef} className="absolute top-0 left-0 rounded-xl w-full h-full" />
-        
+        <canvas
+          ref={canvasRef}
+          className="absolute top-0 left-0 rounded-xl w-full h-full"
+        />
+
         {/* Hiển thị số người phát hiện */}
         {detectedFaces > 0 && (
           <div className="absolute top-4 right-4 bg-gradient-to-r from-blue-600 to-cyan-600 bg-opacity-90 backdrop-blur-sm text-white text-sm px-4 py-2 rounded-full shadow-lg font-bold">
             👥 {detectedFaces} người
           </div>
         )}
-        
+
         {/* Hiển thị thông tin phân tích */}
         {faceAnalysis && !multiPersonMode && (
           <div className="absolute top-4 left-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-opacity-90 backdrop-blur-sm text-white text-sm p-3 rounded-xl shadow-lg">
             <div className="flex items-center gap-2 mb-1">
               <span>👤</span>
               <span className="font-semibold">Hình mặt:</span>
-              <strong className="text-yellow-300">{faceAnalysis.faceShape}</strong>
+              <strong className="text-yellow-300">
+                {faceAnalysis.faceShape}
+              </strong>
             </div>
             <div className="flex items-center gap-2 mb-1">
               <span>📏</span>
               <span className="font-semibold">Tỷ lệ:</span>
-              <span className="text-yellow-300">{faceAnalysis.faceRatio.toFixed(2)}</span>
+              <span className="text-yellow-300">
+                {faceAnalysis.faceRatio.toFixed(2)}
+              </span>
             </div>
             {recommendedGlass && (
               <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/30">
                 <span>✨</span>
-                <span className="text-green-300 font-bold">{recommendedGlass.name}</span>
+                <span className="text-green-300 font-bold">
+                  {recommendedGlass.name}
+                </span>
               </div>
             )}
           </div>
         )}
-        
+
         {/* Hướng dẫn chế độ nhiều người */}
         {multiPersonMode && detectedFaces > 1 && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white text-sm px-4 py-2 rounded-full shadow-lg">
@@ -461,6 +487,73 @@ export default function CameraView() {
           </div>
         )}
       </div>
+
+      {/* Capture button với animation đẹp */}
+      <button
+        onClick={capture}
+        disabled={loading}
+        className="mt-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-full text-lg font-bold hover:from-pink-600 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
+      >
+        {loading ? (
+          <>
+            <svg
+              className="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Đang lưu...
+          </>
+        ) : (
+          <>
+            <span className="text-2xl">📸</span>
+            Chụp & Lưu
+          </>
+        )}
+      </button>
+
+      {/* Result image với styling đẹp */}
+      {imageUrl && (
+        <div className="mt-8 text-center bg-white rounded-2xl p-6 shadow-2xl max-w-md">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">
+            ✨ Kết quả của bạn
+          </h3>
+          <img
+            src={imageUrl}
+            alt="result"
+            className="rounded-xl border-4 border-gray-200 w-full shadow-lg"
+          />
+          <div className="mt-4 flex items-center justify-center gap-2 text-gray-600">
+            <span className="text-2xl">💫</span>
+            <p className="text-sm font-medium">#SeeBeyond #LightOdyssey</p>
+          </div>
+          <button
+            onClick={() => {
+              const link = document.createElement("a");
+              link.href = imageUrl;
+              link.download = "seebeyond-photo.jpg";
+              link.click();
+            }}
+            className="mt-4 bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-2 rounded-full text-sm font-semibold hover:from-green-600 hover:to-teal-700 transition-all duration-300"
+          >
+            � Tải xuống
+          </button>
+        </div>
+      )}
 
       {/* Toggle chế độ nhiều người */}
       <div className="flex items-center gap-4 mt-6 bg-white rounded-full px-6 py-3 shadow-lg">
@@ -516,20 +609,60 @@ export default function CameraView() {
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { value: "none", label: "Bình thường", icon: "👁️", desc: "Thị giác chuẩn" },
-            { value: "colorblind", label: "Mù màu", icon: "🎨", desc: "Deuteranopia" },
-            { value: "nearsighted", label: "Cận thị", icon: "🔍", desc: "Nhìn xa mờ" },
-            { value: "farsighted", label: "Viễn thị", icon: "�", desc: "Nhìn gần mờ" },
-            { value: "lightsensitive", label: "Nhạy sáng", icon: "☀️", desc: "Photophobia" },
-            { value: "cataract", label: "Đục thủy tinh", icon: "🌫️", desc: "Cataract" },
-            { value: "glaucoma", label: "Tăng nhãn áp", icon: "🔘", desc: "Mất thị giác ngoại vi" },
-            { value: "diabetic", label: "Võng mạc ĐTĐ", icon: "🩸", desc: "Retinopathy" }
+            {
+              value: "none",
+              label: "Bình thường",
+              icon: "👁️",
+              desc: "Thị giác chuẩn",
+            },
+            {
+              value: "colorblind",
+              label: "Mù màu",
+              icon: "🎨",
+              desc: "Deuteranopia",
+            },
+            {
+              value: "nearsighted",
+              label: "Cận thị",
+              icon: "🔍",
+              desc: "Nhìn xa mờ",
+            },
+            {
+              value: "farsighted",
+              label: "Viễn thị",
+              icon: "�",
+              desc: "Nhìn gần mờ",
+            },
+            {
+              value: "lightsensitive",
+              label: "Nhạy sáng",
+              icon: "☀️",
+              desc: "Photophobia",
+            },
+            {
+              value: "cataract",
+              label: "Đục thủy tinh",
+              icon: "🌫️",
+              desc: "Cataract",
+            },
+            {
+              value: "glaucoma",
+              label: "Tăng nhãn áp",
+              icon: "🔘",
+              desc: "Mất thị giác ngoại vi",
+            },
+            {
+              value: "diabetic",
+              label: "Võng mạc ĐTĐ",
+              icon: "🩸",
+              desc: "Retinopathy",
+            },
           ].map((f) => (
             <button
               key={f.value}
               className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 text-left ${
-                filter === f.value 
-                  ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg scale-105" 
+                filter === f.value
+                  ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg scale-105"
                   : "bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-sky-400 hover:bg-white"
               }`}
               onClick={() => setFilter(f.value)}
@@ -538,14 +671,19 @@ export default function CameraView() {
                 <span className="text-xl">{f.icon}</span>
                 <span className="font-bold">{f.label}</span>
               </div>
-              <div className={`text-xs ${filter === f.value ? 'text-white/80' : 'text-gray-500'}`}>
+              <div
+                className={`text-xs ${
+                  filter === f.value ? "text-white/80" : "text-gray-500"
+                }`}
+              >
                 {f.desc}
               </div>
             </button>
           ))}
         </div>
         <p className="text-center text-xs text-gray-500 mt-4">
-          💡 Chọn filter để trải nghiệm cách những người có vấn đề về thị giác nhìn thế giới
+          💡 Chọn filter để trải nghiệm cách những người có vấn đề về thị giác
+          nhìn thế giới
         </p>
       </div>
 
@@ -587,19 +725,20 @@ export default function CameraView() {
       {/* Glasses selection với grid layout đẹp - 6 MẪU */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mt-6 max-w-4xl">
         {glassesList.map((g, idx) => {
-          const isActive = multiPersonMode && selectedPerson !== null
-            ? personGlasses[selectedPerson] === idx
-            : glassIndex === idx;
-            
+          const isActive =
+            multiPersonMode && selectedPerson !== null
+              ? personGlasses[selectedPerson] === idx
+              : glassIndex === idx;
+
           return (
             <button
               key={idx}
               onClick={() => {
                 if (multiPersonMode && selectedPerson !== null) {
                   // Gán mắt kính cho người đã chọn
-                  setPersonGlasses(prev => ({
+                  setPersonGlasses((prev) => ({
                     ...prev,
-                    [selectedPerson]: idx
+                    [selectedPerson]: idx,
                   }));
                 } else {
                   // Mode đơn
@@ -609,83 +748,34 @@ export default function CameraView() {
               }}
               className={`rounded-2xl p-3 border-2 transition-all duration-300 transform hover:scale-110 ${
                 isActive
-                  ? "border-sky-500 shadow-xl scale-105 bg-gradient-to-br from-sky-50 to-blue-50" 
+                  ? "border-sky-500 shadow-xl scale-105 bg-gradient-to-br from-sky-50 to-blue-50"
                   : "border-gray-200 hover:border-sky-300 bg-white hover:shadow-lg"
               }`}
               title={g.name}
             >
               <div className="bg-gray-50 rounded-xl p-2 mb-2">
-                <img 
-                  src={g.url} 
-                  alt={g.name} 
+                <img
+                  src={g.url}
+                  alt={g.name}
                   className="w-full h-auto object-contain"
                 />
               </div>
-              <div className={`text-xs font-semibold text-center ${
-                isActive ? "text-sky-600" : "text-gray-600"
-              }`}>
+              <div
+                className={`text-xs font-semibold text-center ${
+                  isActive ? "text-sky-600" : "text-gray-600"
+                }`}
+              >
                 {g.name}
               </div>
             </button>
           );
         })}
       </div>
-      
+
       {/* Hint cho chế độ nhiều người */}
       {multiPersonMode && selectedPerson === null && detectedFaces > 1 && (
         <div className="mt-4 text-center text-sm text-orange-600 font-medium">
           ⚠️ Vui lòng chọn người trước khi chọn mắt kính
-        </div>
-      )}
-
-      {/* Capture button với animation đẹp */}
-      <button
-        onClick={capture}
-        disabled={loading}
-        className="mt-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-full text-lg font-bold hover:from-pink-600 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
-      >
-        {loading ? (
-          <>
-            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Đang lưu...
-          </>
-        ) : (
-          <>
-            <span className="text-2xl">📸</span>
-            Chụp & Lưu
-          </>
-        )}
-      </button>
-
-      {/* Result image với styling đẹp */}
-      {imageUrl && (
-        <div className="mt-8 text-center bg-white rounded-2xl p-6 shadow-2xl max-w-md">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">✨ Kết quả của bạn</h3>
-          <img 
-            src={imageUrl} 
-            alt="result" 
-            className="rounded-xl border-4 border-gray-200 w-full shadow-lg"
-          />
-          <div className="mt-4 flex items-center justify-center gap-2 text-gray-600">
-            <span className="text-2xl">💫</span>
-            <p className="text-sm font-medium">
-              #SeeBeyond #LightOdyssey
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              const link = document.createElement('a');
-              link.href = imageUrl;
-              link.download = 'seebeyond-photo.jpg';
-              link.click();
-            }}
-            className="mt-4 bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-2 rounded-full text-sm font-semibold hover:from-green-600 hover:to-teal-700 transition-all duration-300"
-          >
-            � Tải xuống
-          </button>
         </div>
       )}
     </div>
