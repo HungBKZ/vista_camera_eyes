@@ -72,11 +72,15 @@ export default function CameraView() {
   const [faceAnalysis, setFaceAnalysis] = useState(null);
   const [recommendedGlass, setRecommendedGlass] = useState(null);
 
-  // CHẾ ĐỘ NHIỀU NGƯỜI
-  const [multiPersonMode, setMultiPersonMode] = useState(false);
+  // CHẾ ĐỘ NHIỀU NGƯỜI (Tự động kích hoạt khi có >1 người)
   const [personGlasses, setPersonGlasses] = useState({}); // {faceIndex: glassIndex}
   const [detectedFaces, setDetectedFaces] = useState(0);
   const [selectedPerson, setSelectedPerson] = useState(null);
+  const multiPersonMode = detectedFaces > 1; // Tự động bật khi có nhiều người
+  
+  // HIỆU ỨNG CHỤP ẢNH
+  const [showFlash, setShowFlash] = useState(false);
+  const [captureSuccess, setCaptureSuccess] = useState(false);
 
   // Hàm phân tích khuôn mặt và gợi ý mắt kính
   const analyzeFaceAndRecommend = useCallback((faceLandmarks) => {
@@ -407,45 +411,92 @@ export default function CameraView() {
   ]);
 
   const capture = async () => {
+    // HIỆU ỨNG FLASH
+    setShowFlash(true);
+    setTimeout(() => setShowFlash(false), 200);
+    
+    // ÂMTHANH CHỤP (optional - có thể thêm sau)
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGWa78OSXUhELTaTk7qFRCw0+ldXyvm0hBSuBzvLZiTYIGGa78OSXUhELTKPk7p9RCw0+lNXyvWwhBSuBzvLZiTcIF2a77+SWURENTKPk7p9RCw0+lNXyvWwhBSuBzvLZiTcIF2a77+SWURENTKPk7p9RCw0+lNXyvWwhBSuBzvLZiTcIF2a77+SWURENTKPk7p9RCw0+lNXyvWwhBSuBzvLZiTcIF2a77+SWURENTKPk7p9RCw0+lNXyvWwhBSuBzvLZiTcIF2a77+SWURENTKPk7p9RCw0+lNXyvWwhBSuBzvLZiTcIF2a77+SWURENTKPk7p9RCw0+lNXyvWwhBSuBzvLZiTcIF2a77+SWURENTKPk7p9RCw0=');
+    audio.volume = 0.3;
+    audio.play().catch(() => {}); // Ignore if autoplay blocked
+    
     const canvas = canvasRef.current;
-    const imageSrc = canvas.toDataURL("image/jpeg");
+    const imageSrc = canvas.toDataURL("image/jpeg", 0.95);
     setLoading(true);
-    let uploadedUrl;
+    
     try {
+      let uploadedUrl;
       if (process.env.REACT_APP_USE_CLOUDINARY === "true") {
         uploadedUrl = await uploadToCloudinary(imageSrc);
       } else {
         uploadedUrl = imageSrc;
       }
       setImageUrl(uploadedUrl);
+      
+      // TỰ ĐỘNG DOWNLOAD ẢNH
+      const link = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      link.download = `SeeBeyond_${timestamp}.jpg`;
+      link.href = imageSrc;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // HIỂN THỊ THÔNG BÁO THÀNH CÔNG
+      setCaptureSuccess(true);
+      setTimeout(() => setCaptureSuccess(false), 3000);
+      
+    } catch (error) {
+      console.error('Capture error:', error);
+      alert('Có lỗi khi chụp ảnh. Vui lòng thử lại!');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center px-4 py-6">
-      {/* Video Container với border đẹp - KHUNG TO HƠN */}
-      <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-gradient w-full max-w-5xl">
-        <Webcam
-          ref={webcamRef}
-          mirrored
-          width={1200}
-          height={900}
-          className="rounded-xl w-full"
-          videoConstraints={{
-            width: 1920,
-            height: 1080,
-            facingMode: "user",
-            aspectRatio: 1.333,
-          }}
-        />
-        <canvas
-          ref={canvasRef}
-          className="absolute top-0 left-0 rounded-xl w-full h-full"
-        />
+    <div className="flex flex-col items-center w-full min-h-screen">
+      {/* LAYOUT FULL WIDTH: Camera + Filter */}
+      <div className="flex gap-4 w-full px-4 py-6 max-w-[1800px] mx-auto">
+        {/* Video Container */}
+        <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-gradient flex-1">
+          <Webcam
+            ref={webcamRef}
+            mirrored
+            width={1200}
+            height={900}
+            className="rounded-xl w-full"
+            videoConstraints={{
+              width: 1920,
+              height: 1080,
+              facingMode: "user",
+              aspectRatio: 1.333,
+            }}
+          />
+          <canvas
+            ref={canvasRef}
+            className="absolute top-0 left-0 rounded-xl w-full h-full"
+          />
+          
+          {/* FLASH EFFECT */}
+          {showFlash && (
+            <div className="absolute inset-0 bg-white animate-flash pointer-events-none rounded-xl" />
+          )}
+          
+          {/* SUCCESS MESSAGE */}
+          {captureSuccess && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+              <div>
+                <p className="text-xl font-bold">Chụp thành công! 📸</p>
+                <p className="text-sm opacity-90">Ảnh đã được lưu vào máy</p>
+              </div>
+            </div>
+          )}
 
-        {/* Hiển thị số người phát hiện */}
+          {/* Hiển thị số người phát hiện */}
         {detectedFaces > 0 && (
           <div className="absolute top-4 right-4 bg-gradient-to-r from-blue-600 to-cyan-600 bg-opacity-90 backdrop-blur-sm text-white text-sm px-4 py-2 rounded-full shadow-lg font-bold">
             👥 {detectedFaces} người
@@ -480,51 +531,105 @@ export default function CameraView() {
           </div>
         )}
 
-        {/* Hướng dẫn chế độ nhiều người */}
-        {multiPersonMode && detectedFaces > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white text-sm px-4 py-2 rounded-full shadow-lg">
-            💡 Click vào số người để chọn mắt kính riêng
-          </div>
-        )}
-      </div>
+          {/* Hướng dẫn chế độ nhiều người */}
+          {detectedFaces > 1 && (
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm px-5 py-2 rounded-full shadow-xl font-semibold animate-pulse">
+              � Phát hiện {detectedFaces} người - Click số để chọn mắt kính riêng
+            </div>
+          )}
+        </div>
 
-      {/* Capture button với animation đẹp */}
-      <button
-        onClick={capture}
-        disabled={loading}
-        className="mt-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-full text-lg font-bold hover:from-pink-600 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
-      >
-        {loading ? (
-          <>
-            <svg
-              className="animate-spin h-5 w-5 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            Đang lưu...
-          </>
-        ) : (
-          <>
-            <span className="text-2xl">📸</span>
-            Chụp & Lưu
-          </>
-        )}
-      </button>
+        {/* FILTER PANEL BÊN CẠNH */}
+        <div className="w-72 flex-shrink-0 flex flex-col gap-4">
+          <div className="bg-white rounded-2xl p-4 shadow-xl">
+            <h3 className="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
+              <span className="text-2xl">🔬</span>
+              Trải nghiệm thị giác
+            </h3>
+            <div className="space-y-2 max-h-[600px] overflow-y-auto custom-scrollbar">
+              {[
+                { value: "none", label: "Bình thường", icon: "👁️", desc: "Thị giác chuẩn" },
+                { value: "colorblind", label: "Mù màu", icon: "🎨", desc: "Deuteranopia" },
+                { value: "nearsighted", label: "Cận thị", icon: "🔍", desc: "Nhìn xa mờ" },
+                { value: "farsighted", label: "Viễn thị", icon: "👓", desc: "Nhìn gần mờ" },
+                { value: "lightsensitive", label: "Nhạy sáng", icon: "☀️", desc: "Photophobia" },
+                { value: "cataract", label: "Đục thủy tinh", icon: "🌫️", desc: "Cataract" },
+                { value: "glaucoma", label: "Tăng nhãn áp", icon: "🔘", desc: "Mất thị giác ngoại vi" },
+                { value: "diabetic", label: "Võng mạc ĐTĐ", icon: "🩸", desc: "Retinopathy" }
+              ].map((f) => (
+                <button
+                  key={f.value}
+                  className={`w-full px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-left ${
+                    filter === f.value 
+                      ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md" 
+                      : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
+                  }`}
+                  onClick={() => setFilter(f.value)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{f.icon}</span>
+                    <div className="flex-1">
+                      <div className="font-bold">{f.label}</div>
+                      <div className={`text-xs ${filter === f.value ? 'text-white/80' : 'text-gray-500'}`}>
+                        {f.desc}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Capture Button bên panel */}
+          <button
+            onClick={capture}
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-4 rounded-xl text-base font-bold hover:from-pink-600 hover:to-purple-700 hover:shadow-2xl active:scale-95 transform transition-all duration-200 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 relative overflow-hidden group"
+          >
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 group-hover:translate-x-full transition-all duration-700"></div>
+            
+            {loading ? (
+              <>
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <span>Đang xử lý...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Chụp & Lưu</span>
+              </>
+            )}
+          </button>
+          
+          {/* Info text */}
+          <p className="text-xs text-gray-500 text-center px-2">
+            💾 Ảnh sẽ tự động tải về máy sau khi chụp
+          </p>
+        </div>
+      </div>
 
       {/* Result image với styling đẹp */}
       {imageUrl && (
@@ -555,37 +660,10 @@ export default function CameraView() {
         </div>
       )}
 
-      {/* Toggle chế độ nhiều người */}
-      <div className="flex items-center gap-4 mt-6 bg-white rounded-full px-6 py-3 shadow-lg">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <div className="relative">
-            <input
-              type="checkbox"
-              checked={multiPersonMode}
-              onChange={(e) => {
-                setMultiPersonMode(e.target.checked);
-                if (!e.target.checked) {
-                  setPersonGlasses({});
-                  setSelectedPerson(null);
-                }
-              }}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-600"></div>
-          </div>
-          <span className="text-sm font-semibold text-gray-700">
-            👥 Chế độ nhiều người
-          </span>
-        </label>
-        {multiPersonMode && detectedFaces > 1 && (
-          <span className="text-xs text-gray-500 italic">
-            ({detectedFaces} người phát hiện)
-          </span>
-        )}
-      </div>
+
 
       {/* Toggle chế độ tự động với styling đẹp */}
-      <div className="flex items-center gap-3 mt-6 bg-white rounded-full px-6 py-3 shadow-lg">
+      <div className="flex items-center gap-3 mt-6 bg-white rounded-full px-6 py-3 shadow-lg w-full max-w-[1800px] mx-auto justify-center">
         <label className="flex items-center gap-3 cursor-pointer">
           <div className="relative">
             <input
@@ -602,8 +680,8 @@ export default function CameraView() {
         </label>
       </div>
 
-      {/* Filter buttons với nhiều tùy chọn */}
-      <div className="mt-6 bg-white rounded-2xl p-6 shadow-xl max-w-4xl">
+      {/* Filter buttons đã di chuyển lên bên cạnh camera */}
+      {/* <div className="mt-6 bg-white rounded-2xl p-6 shadow-xl max-w-4xl">
         <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
           🔬 Trải nghiệm các tình trạng thị giác
         </h3>
@@ -685,14 +763,18 @@ export default function CameraView() {
           💡 Chọn filter để trải nghiệm cách những người có vấn đề về thị giác
           nhìn thế giới
         </p>
-      </div>
+      </div> */}
 
-      {/* Chọn người (chỉ hiện ở chế độ nhiều người) */}
-      {multiPersonMode && detectedFaces > 1 && (
-        <div className="mt-6 bg-white rounded-2xl p-6 shadow-xl max-w-4xl w-full">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
-            👥 Chọn người để thử mắt kính
+      {/* Chọn người (tự động hiện khi có nhiều người) */}
+      {detectedFaces > 1 && (
+        <div className="mt-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 shadow-xl w-full max-w-[1800px] mx-auto border-2 border-orange-200">
+          <h3 className="text-lg font-bold text-gray-800 mb-2 text-center flex items-center justify-center gap-2">
+            <span className="text-2xl">👥</span>
+            Phát hiện {detectedFaces} người - Chọn để thử mắt kính riêng
           </h3>
+          <p className="text-sm text-gray-600 text-center mb-4">
+            Mỗi người có thể thử mắt kính khác nhau!
+          </p>
           <div className="flex gap-3 justify-center flex-wrap">
             {Array.from({ length: detectedFaces }).map((_, index) => (
               <button
@@ -723,7 +805,7 @@ export default function CameraView() {
       )}
 
       {/* Glasses selection với grid layout đẹp - 6 MẪU */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mt-6 max-w-4xl">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mt-6 w-full max-w-[1800px] mx-auto px-4">
         {glassesList.map((g, idx) => {
           const isActive =
             multiPersonMode && selectedPerson !== null
