@@ -3,6 +3,7 @@ import Webcam from "react-webcam";
 import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision";
 import { uploadToCloudinary } from "../utils/cloudinary";
 
+// KINH NGHIEM TUC (Professional)
 const glassesList = [
   {
     id: 1,
@@ -12,6 +13,7 @@ const glassesList = [
     minFaceWidth: 0.15,
     maxFaceWidth: 0.35,
     scaleMultiplier: 1.6,
+    category: "professional",
   },
   {
     id: 2,
@@ -21,6 +23,7 @@ const glassesList = [
     minFaceWidth: 0.15,
     maxFaceWidth: 0.35,
     scaleMultiplier: 1.7,
+    category: "professional",
   },
   {
     id: 3,
@@ -30,6 +33,7 @@ const glassesList = [
     minFaceWidth: 0.15,
     maxFaceWidth: 0.32,
     scaleMultiplier: 1.5,
+    category: "professional",
   },
   {
     id: 4,
@@ -39,6 +43,7 @@ const glassesList = [
     minFaceWidth: 0.18,
     maxFaceWidth: 0.4,
     scaleMultiplier: 1.8,
+    category: "professional",
   },
   {
     id: 5,
@@ -48,6 +53,7 @@ const glassesList = [
     minFaceWidth: 0.15,
     maxFaceWidth: 0.35,
     scaleMultiplier: 1.7,
+    category: "professional",
   },
   {
     id: 6,
@@ -57,7 +63,22 @@ const glassesList = [
     minFaceWidth: 0.15,
     maxFaceWidth: 0.38,
     scaleMultiplier: 1.6,
+    category: "professional",
   },
+];
+
+
+
+// ISHIHARA COLOR BLIND TEST PLATES
+const ishiharaPlates = [
+  { id: 1, number: "12", colors: { normal: "12", colorblind: "?" }, bgColor: "#8B9467", dotColor: "#C44536" },
+  { id: 2, number: "8", colors: { normal: "8", colorblind: "3" }, bgColor: "#6B8E23", dotColor: "#CD5C5C" },
+  { id: 3, number: "6", colors: { normal: "6", colorblind: "?" }, bgColor: "#9ACD32", dotColor: "#DC143C" },
+  { id: 4, number: "29", colors: { normal: "29", colorblind: "70" }, bgColor: "#808000", dotColor: "#B22222" },
+  { id: 5, number: "57", colors: { normal: "57", colorblind: "35" }, bgColor: "#556B2F", dotColor: "#CD853F" },
+  { id: 6, number: "5", colors: { normal: "5", colorblind: "2" }, bgColor: "#6B8E23", dotColor: "#E9967A" },
+  { id: 7, number: "3", colors: { normal: "3", colorblind: "5" }, bgColor: "#9ACD32", dotColor: "#F08080" },
+  { id: 8, number: "15", colors: { normal: "15", colorblind: "17" }, bgColor: "#808000", dotColor: "#FA8072" },
 ];
 
 export default function CameraView() {
@@ -81,6 +102,51 @@ export default function CameraView() {
   // HIỆU ỨNG CHỤP ẢNH
   const [showFlash, setShowFlash] = useState(false);
   const [captureSuccess, setCaptureSuccess] = useState(false);
+
+  // PRELOAD TẤT CẢ ẢNH MẮT KÍNH - SỬA LỖI NHẢY LOẠN XẠ
+  const glassesImagesRef = useRef({});
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+
+  // FACE TRACKING - GIỮ ID ỔN ĐỊNH CHO MỖI KHUÔN MẶT
+  const faceTrackerRef = useRef([]);
+  const nextFaceIdRef = useRef(0);
+  const [trackedFaces, setTrackedFaces] = useState([]); // State để trigger re-render UI
+
+  // TINH NANG MOI: BAT/TAT MAT KINH
+  const [glassesEnabled, setGlassesEnabled] = useState(true);
+
+  // TINH NANG MOI: DIEU CHINH DO KHUC XA (Dioptri)
+  const [visionSettings, setVisionSettings] = useState({
+    myopia: 0,        // Can thi (-0.25 den -10.00)
+    hyperopia: 0,     // Vien thi (+0.25 den +6.00) 
+    astigmatism: 0,   // Loan thi (0 den -6.00)
+    axis: 0,          // Truc loan thi (0-180 do)
+  });
+  const [showVisionPanel, setShowVisionPanel] = useState(false);
+
+  // TINH NANG MOI: EMPATHY MODE
+  const [empathyMode, setEmpathyMode] = useState(false);
+  const [empathyTimer, setEmpathyTimer] = useState(0);
+  const [empathyCondition, setEmpathyCondition] = useState(null);
+  const empathyTimerRef = useRef(null);
+
+  // TINH NANG MOI: TAB NAVIGATION (for mobile)
+  const [activeTab, setActiveTab] = useState('glasses'); // glasses, effects, tools
+
+
+
+  // TINH NANG MOI: COLOR BLIND TEST
+  const [showColorTest, setShowColorTest] = useState(false);
+  const [colorTestIndex, setColorTestIndex] = useState(0);
+  const [colorTestAnswers, setColorTestAnswers] = useState([]);
+  const [colorTestResult, setColorTestResult] = useState(null);
+  const [colorTestOptions, setColorTestOptions] = useState([]);
+
+  // TINH NANG MOI: GALLERY (Lich su thu kinh)
+  const [gallery, setGallery] = useState([]);
+  const [showGallery, setShowGallery] = useState(false);
+
+
 
   // Hàm phân tích khuôn mặt và gợi ý mắt kính
   const analyzeFaceAndRecommend = useCallback((faceLandmarks) => {
@@ -141,6 +207,143 @@ export default function CameraView() {
     };
   }, []);
 
+  // Preload tất cả ảnh mắt kính khi component mount (ca professional va fun)
+  useEffect(() => {
+    const loadImages = async () => {
+      const allGlasses = [...glassesList];
+      const promises = allGlasses.map((glass) => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            glassesImagesRef.current[glass.id] = img;
+            resolve();
+          };
+          img.onerror = () => resolve(); // Khong reject de khong lam hong ca batch
+          img.src = glass.url;
+        });
+      });
+
+      try {
+        await Promise.all(promises);
+        setImagesLoaded(true);
+        console.log("Da load xong tat ca anh mat kinh!");
+      } catch (error) {
+        console.error("Loi load anh mat kinh:", error);
+      }
+    };
+
+    loadImages();
+  }, []);
+
+  // EMPATHY MODE TIMER
+  useEffect(() => {
+    if (empathyMode && empathyCondition) {
+      empathyTimerRef.current = setInterval(() => {
+        setEmpathyTimer(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (empathyTimerRef.current) {
+        clearInterval(empathyTimerRef.current);
+      }
+      setEmpathyTimer(0);
+    }
+    return () => {
+      if (empathyTimerRef.current) {
+        clearInterval(empathyTimerRef.current);
+      }
+    };
+  }, [empathyMode, empathyCondition]);
+
+  // START EMPATHY MODE
+  const startEmpathyMode = (condition) => {
+    setEmpathyMode(true);
+    setEmpathyCondition(condition);
+    setFilter(condition);
+    setEmpathyTimer(0);
+  };
+
+  // STOP EMPATHY MODE
+  const stopEmpathyMode = () => {
+    setEmpathyMode(false);
+    setEmpathyCondition(null);
+    setFilter("none");
+  };
+
+  // FORMAT TIME
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // COLOR BLIND TEST FUNCTIONS
+  const generateOptions = (index) => {
+    const correctAnswer = ishiharaPlates[index].number;
+    const correctNum = parseInt(correctAnswer);
+    
+    // Tao 5 dap an ngau nhien + 1 dap an dung
+    const options = new Set([correctAnswer]);
+    while (options.size < 6) {
+      // Random so gan voi dap an dung (+-15)
+      const variance = Math.floor(Math.random() * 30) - 15;
+      const randomNum = Math.max(1, correctNum + variance);
+      if (String(randomNum) !== correctAnswer) {
+        options.add(String(randomNum));
+      }
+    }
+    
+    // Shuffle va them option "Khong thay"
+    const shuffled = [...options].sort(() => Math.random() - 0.5);
+    return [...shuffled, '?'];
+  };
+
+  const startColorTest = () => {
+    setShowColorTest(true);
+    setColorTestIndex(0);
+    setColorTestAnswers([]);
+    setColorTestResult(null);
+    setColorTestOptions(generateOptions(0));
+  };
+
+  const submitColorTestAnswer = (answer) => {
+    const newAnswers = [...colorTestAnswers, answer];
+    setColorTestAnswers(newAnswers);
+    
+    if (colorTestIndex < ishiharaPlates.length - 1) {
+      const nextIndex = colorTestIndex + 1;
+      setColorTestIndex(nextIndex);
+      setColorTestOptions(generateOptions(nextIndex));
+    } else {
+      // Calculate result
+      let correct = 0;
+      newAnswers.forEach((ans, idx) => {
+        if (ans === ishiharaPlates[idx].number) {
+          correct++;
+        }
+      });
+      const percentage = (correct / ishiharaPlates.length) * 100;
+      let diagnosis = "Thi luc mau binh thuong";
+      if (percentage < 50) {
+        diagnosis = "Co the bi mu mau - Nen gap bac si";
+      } else if (percentage < 75) {
+        diagnosis = "Co dau hieu roi loan nhan mau nhe";
+      }
+      setColorTestResult({ correct, total: ishiharaPlates.length, percentage, diagnosis });
+    }
+  };
+
+  // ADD TO GALLERY
+  const addToGallery = (imageData, glassName) => {
+    const newItem = {
+      id: Date.now(),
+      image: imageData,
+      glassName,
+      timestamp: new Date().toLocaleString('vi-VN'),
+    };
+    setGallery(prev => [newItem, ...prev].slice(0, 12)); // Max 12 items
+  };
+
   useEffect(() => {
     async function initFace() {
       const vision = await FilesetResolver.forVisionTasks(
@@ -185,7 +388,62 @@ export default function CameraView() {
       const numFaces = results.faceLandmarks?.length || 0;
       setDetectedFaces(numFaces);
 
-      if (results.faceLandmarks?.length > 0) {
+      // FACE TRACKING - Gán ID ổn định cho mỗi khuôn mặt
+      if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+        const currentFaces = results.faceLandmarks.map((face) => {
+          const leftEye = face[33];
+          const rightEye = face[263];
+          const noseTip = face[1];
+          return {
+            x: (leftEye.x + rightEye.x + noseTip.x) / 3,
+            y: (leftEye.y + rightEye.y + noseTip.y) / 3,
+          };
+        });
+
+        // Match với tracked faces (trong vòng 0.1 khoảng cách)
+        const newTracker = [];
+        const usedOldIndices = new Set();
+
+        currentFaces.forEach((currentFace) => {
+          let bestMatch = -1;
+          let bestDistance = 0.1; // threshold
+
+          faceTrackerRef.current.forEach((trackedFace, trackedIndex) => {
+            if (usedOldIndices.has(trackedIndex)) return;
+            const distance = Math.hypot(
+              currentFace.x - trackedFace.x,
+              currentFace.y - trackedFace.y
+            );
+            if (distance < bestDistance) {
+              bestDistance = distance;
+              bestMatch = trackedIndex;
+            }
+          });
+
+          if (bestMatch !== -1) {
+            // Match found - giữ nguyên ID
+            usedOldIndices.add(bestMatch);
+            newTracker.push({
+              ...currentFace,
+              id: faceTrackerRef.current[bestMatch].id,
+            });
+          } else {
+            // Khuôn mặt mới - gán ID mới
+            newTracker.push({
+              ...currentFace,
+              id: nextFaceIdRef.current++,
+            });
+          }
+        });
+
+        faceTrackerRef.current = newTracker;
+        setTrackedFaces([...newTracker]); // Cập nhật state để UI re-render
+      } else {
+        faceTrackerRef.current = [];
+        setTrackedFaces([]);
+      }
+
+      if (results.faceLandmarks?.length > 0 && imagesLoaded) {
         // Phân tích khuôn mặt đầu tiên
         const analysis = analyzeFaceAndRecommend(results.faceLandmarks);
 
@@ -204,7 +462,8 @@ export default function CameraView() {
           }
         }
 
-        // VẼ MẮT KÍNH CHO TẤT CẢ KHUÔN MẶT
+        // VẼ MẮT KÍNH CHO TẤT CẢ KHUÔN MẶT (chi khi glassesEnabled = true)
+        if (glassesEnabled) {
         results.faceLandmarks.forEach((face, faceIndex) => {
           const leftEye = face[33];
           const rightEye = face[263];
@@ -220,10 +479,13 @@ export default function CameraView() {
           // Tính khoảng cách giữa 2 mắt để scale
           const eyeDistance = Math.hypot(dx, dy);
 
-          // Lấy mắt kính cho người này
+          // Lấy stable ID từ face tracker
+          const stableFaceId = faceTrackerRef.current[faceIndex]?.id ?? faceIndex;
+
+          // Lấy mắt kính cho người này (dùng stable ID)
           let currentGlassIndex = glassIndex;
-          if (multiPersonMode && personGlasses[faceIndex] !== undefined) {
-            currentGlassIndex = personGlasses[faceIndex];
+          if (multiPersonMode && personGlasses[stableFaceId] !== undefined) {
+            currentGlassIndex = personGlasses[stableFaceId];
           }
 
           const currentGlass = glassesList[currentGlassIndex];
@@ -236,9 +498,9 @@ export default function CameraView() {
           // Điều chỉnh vị trí Y
           const offsetY = eyeDistance * 0.03;
 
-          const glassesImg = new Image();
-          glassesImg.src = currentGlass.url;
-          glassesImg.crossOrigin = "anonymous";
+          // SỬ DỤNG ẢNH ĐÃ PRELOAD - KHÔNG TẠO MỚI
+          const glassesImg = glassesImagesRef.current[currentGlass.id];
+          if (!glassesImg) return; // Skip nếu ảnh chưa load
 
           ctx.save();
           ctx.translate(eyeCenterX, eyeCenterY - offsetY);
@@ -252,11 +514,13 @@ export default function CameraView() {
           );
           ctx.restore();
 
-          // VẼ SỐ THỨ TỰ NGƯỜI
+          // VẼ SỐ THỨ TỰ NGƯỜI (dùng stable ID)
           if (multiPersonMode && numFaces > 1) {
+            const displayNumber = stableFaceId + 1; // Hiển thị ID ổn định
+
             ctx.save();
             ctx.fillStyle =
-              selectedPerson === faceIndex
+              selectedPerson === stableFaceId
                 ? "rgba(34, 197, 94, 0.9)"
                 : "rgba(59, 130, 246, 0.9)";
             ctx.strokeStyle = "white";
@@ -274,10 +538,61 @@ export default function CameraView() {
             ctx.stroke();
 
             ctx.fillStyle = "white";
-            ctx.fillText((faceIndex + 1).toString(), labelX, labelY);
+            ctx.fillText(displayNumber.toString(), labelX, labelY);
             ctx.restore();
           }
         });
+        } // end if glassesEnabled
+      }
+
+      // HIEU UNG MO PHONG DO KHUC XA (Dioptri) - Ap dung truoc filter
+      const applyVisionBlur = () => {
+        const { myopia, hyperopia, astigmatism } = visionSettings;
+        
+        // Tinh tong do mo dua tren cac thong so
+        let blurAmount = 0;
+        
+        // Can thi: cang am cang mo xa
+        if (myopia < 0) {
+          blurAmount += Math.abs(myopia) * 1.5;
+        }
+        
+        // Vien thi: cang duong cang mo gan (mo it hon)
+        if (hyperopia > 0) {
+          blurAmount += hyperopia * 0.8;
+        }
+        
+        // Loan thi: them hieu ung mo khong deu
+        if (astigmatism < 0) {
+          blurAmount += Math.abs(astigmatism) * 1.2;
+        }
+        
+        if (blurAmount > 0) {
+          ctx.filter = `blur(${Math.min(blurAmount, 20)}px)`;
+          ctx.drawImage(canvas, 0, 0);
+          ctx.filter = "none";
+          
+          // Them hieu ung loan thi (directional blur)
+          if (astigmatism < 0) {
+            const axis = visionSettings.axis;
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate((axis * Math.PI) / 180);
+            ctx.scale(1, 1 + Math.abs(astigmatism) * 0.05);
+            ctx.translate(-canvas.width / 2, -canvas.height / 2);
+            ctx.globalAlpha = 0.3;
+            ctx.filter = `blur(${Math.abs(astigmatism) * 2}px)`;
+            ctx.drawImage(canvas, 0, 0);
+            ctx.restore();
+            ctx.filter = "none";
+            ctx.globalAlpha = 1;
+          }
+        }
+      };
+      
+      // Ap dung hieu ung khuc xa neu co gia tri
+      if (visionSettings.myopia !== 0 || visionSettings.hyperopia !== 0 || visionSettings.astigmatism !== 0) {
+        applyVisionBlur();
       }
 
       // Filter mô phỏng các tình trạng thị giác
@@ -408,6 +723,9 @@ export default function CameraView() {
     multiPersonMode,
     personGlasses,
     selectedPerson,
+    imagesLoaded,
+    glassesEnabled,
+    visionSettings,
   ]);
 
   const capture = async () => {
@@ -446,6 +764,10 @@ export default function CameraView() {
       setCaptureSuccess(true);
       setTimeout(() => setCaptureSuccess(false), 3000);
       
+      // ADD TO GALLERY
+      const currentGlassName = glassesList[glassIndex]?.name;
+      addToGallery(imageSrc, currentGlassName || 'Unknown');
+      
     } catch (error) {
       console.error('Capture error:', error);
       alert('Có lỗi khi chụp ảnh. Vui lòng thử lại!');
@@ -455,411 +777,573 @@ export default function CameraView() {
   };
 
   return (
-    <div className="flex flex-col items-center w-full min-h-screen">
-      {/* LAYOUT FULL WIDTH: Camera + Filter */}
-      <div className="flex gap-4 w-full px-4 py-6 max-w-[1800px] mx-auto">
-        {/* Video Container */}
-        <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-gradient flex-1">
-          <Webcam
-            ref={webcamRef}
-            mirrored
-            width={1200}
-            height={900}
-            className="rounded-xl w-full"
-            videoConstraints={{
-              width: 1920,
-              height: 1080,
-              facingMode: "user",
-              aspectRatio: 1.333,
-            }}
-          />
-          <canvas
-            ref={canvasRef}
-            className="absolute top-0 left-0 rounded-xl w-full h-full"
-          />
-          
-          {/* FLASH EFFECT */}
-          {showFlash && (
-            <div className="absolute inset-0 bg-white animate-flash pointer-events-none rounded-xl" />
-          )}
-          
-          {/* SUCCESS MESSAGE */}
-          {captureSuccess && (
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-              </svg>
-              <div>
-                <p className="text-xl font-bold">Chụp thành công! 📸</p>
-                <p className="text-sm opacity-90">Ảnh đã được lưu vào máy</p>
-              </div>
-            </div>
-          )}
-
-          {/* Hiển thị số người phát hiện */}
-        {detectedFaces > 0 && (
-          <div className="absolute top-4 right-4 bg-gradient-to-r from-blue-600 to-cyan-600 bg-opacity-90 backdrop-blur-sm text-white text-sm px-4 py-2 rounded-full shadow-lg font-bold">
-            👥 {detectedFaces} người
-          </div>
-        )}
-
-        {/* Hiển thị thông tin phân tích */}
-        {faceAnalysis && !multiPersonMode && (
-          <div className="absolute top-4 left-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-opacity-90 backdrop-blur-sm text-white text-sm p-3 rounded-xl shadow-lg">
-            <div className="flex items-center gap-2 mb-1">
-              <span>👤</span>
-              <span className="font-semibold">Hình mặt:</span>
-              <strong className="text-yellow-300">
-                {faceAnalysis.faceShape}
-              </strong>
-            </div>
-            <div className="flex items-center gap-2 mb-1">
-              <span>📏</span>
-              <span className="font-semibold">Tỷ lệ:</span>
-              <span className="text-yellow-300">
-                {faceAnalysis.faceRatio.toFixed(2)}
-              </span>
-            </div>
-            {recommendedGlass && (
-              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/30">
-                <span>✨</span>
-                <span className="text-green-300 font-bold">
-                  {recommendedGlass.name}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-          {/* Hướng dẫn chế độ nhiều người */}
-          {detectedFaces > 1 && (
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm px-5 py-2 rounded-full shadow-xl font-semibold animate-pulse">
-              � Phát hiện {detectedFaces} người - Click số để chọn mắt kính riêng
-            </div>
-          )}
-        </div>
-
-        {/* FILTER PANEL BÊN CẠNH */}
-        <div className="w-72 flex-shrink-0 flex flex-col gap-4">
-          <div className="bg-white rounded-2xl p-4 shadow-xl">
-            <h3 className="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <span className="text-2xl">🔬</span>
-              Trải nghiệm thị giác
-            </h3>
-            <div className="space-y-2 max-h-[600px] overflow-y-auto custom-scrollbar">
-              {[
-                { value: "none", label: "Bình thường", icon: "👁️", desc: "Thị giác chuẩn" },
-                { value: "colorblind", label: "Mù màu", icon: "🎨", desc: "Deuteranopia" },
-                { value: "nearsighted", label: "Cận thị", icon: "🔍", desc: "Nhìn xa mờ" },
-                { value: "farsighted", label: "Viễn thị", icon: "👓", desc: "Nhìn gần mờ" },
-                { value: "lightsensitive", label: "Nhạy sáng", icon: "☀️", desc: "Photophobia" },
-                { value: "cataract", label: "Đục thủy tinh", icon: "🌫️", desc: "Cataract" },
-                { value: "glaucoma", label: "Tăng nhãn áp", icon: "🔘", desc: "Mất thị giác ngoại vi" },
-                { value: "diabetic", label: "Võng mạc ĐTĐ", icon: "🩸", desc: "Retinopathy" }
-              ].map((f) => (
-                <button
-                  key={f.value}
-                  className={`w-full px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-left ${
-                    filter === f.value 
-                      ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md" 
-                      : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
-                  }`}
-                  onClick={() => setFilter(f.value)}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{f.icon}</span>
-                    <div className="flex-1">
-                      <div className="font-bold">{f.label}</div>
-                      <div className={`text-xs ${filter === f.value ? 'text-white/80' : 'text-gray-500'}`}>
-                        {f.desc}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Capture Button bên panel */}
-          <button
-            onClick={capture}
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-4 rounded-xl text-base font-bold hover:from-pink-600 hover:to-purple-700 hover:shadow-2xl active:scale-95 transform transition-all duration-200 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 relative overflow-hidden group"
-          >
-            {/* Shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 group-hover:translate-x-full transition-all duration-700"></div>
-            
-            {loading ? (
-              <>
-                <svg
-                  className="animate-spin h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <span>Đang xử lý...</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>Chụp & Lưu</span>
-              </>
-            )}
-          </button>
-          
-          {/* Info text */}
-          <p className="text-xs text-gray-500 text-center px-2">
-            💾 Ảnh sẽ tự động tải về máy sau khi chụp
-          </p>
-        </div>
-      </div>
-
-      {/* Result image với styling đẹp */}
-      {imageUrl && (
-        <div className="mt-8 text-center bg-white rounded-2xl p-6 shadow-2xl max-w-md">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">
-            ✨ Kết quả của bạn
-          </h3>
-          <img
-            src={imageUrl}
-            alt="result"
-            className="rounded-xl border-4 border-gray-200 w-full shadow-lg"
-          />
-          <div className="mt-4 flex items-center justify-center gap-2 text-gray-600">
-            <span className="text-2xl">💫</span>
-            <p className="text-sm font-medium">#SeeBeyond #LightOdyssey</p>
-          </div>
-          <button
-            onClick={() => {
-              const link = document.createElement("a");
-              link.href = imageUrl;
-              link.download = "seebeyond-photo.jpg";
-              link.click();
-            }}
-            className="mt-4 bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-2 rounded-full text-sm font-semibold hover:from-green-600 hover:to-teal-700 transition-all duration-300"
-          >
-            � Tải xuống
-          </button>
-        </div>
-      )}
-
-
-
-      {/* Toggle chế độ tự động với styling đẹp */}
-      <div className="flex items-center gap-3 mt-6 bg-white rounded-full px-6 py-3 shadow-lg w-full max-w-[1800px] mx-auto justify-center">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <div className="relative">
-            <input
-              type="checkbox"
-              checked={autoMode}
-              onChange={(e) => setAutoMode(e.target.checked)}
-              className="sr-only peer"
+    <div className="flex flex-col w-full min-h-screen bg-gray-50">
+      {/* MAIN LAYOUT - Responsive */}
+      <div className="flex flex-col lg:flex-row gap-3 w-full p-2 md:p-4 max-w-[1600px] mx-auto">
+        
+        {/* CAMERA SECTION */}
+        <div className="flex-1 relative">
+          <div className="relative rounded-2xl overflow-hidden shadow-xl bg-black aspect-[4/3]">
+            <Webcam
+              ref={webcamRef}
+              mirrored
+              className="w-full h-full object-cover"
+              videoConstraints={{
+                facingMode: "user",
+                aspectRatio: 1.333,
+              }}
             />
-            <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-sky-500 peer-checked:to-blue-600"></div>
-          </div>
-          <span className="text-sm font-semibold text-gray-700">
-            🤖 Tự động chọn mắt kính
-          </span>
-        </label>
-      </div>
-
-      {/* Filter buttons đã di chuyển lên bên cạnh camera */}
-      {/* <div className="mt-6 bg-white rounded-2xl p-6 shadow-xl max-w-4xl">
-        <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
-          🔬 Trải nghiệm các tình trạng thị giác
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            {
-              value: "none",
-              label: "Bình thường",
-              icon: "👁️",
-              desc: "Thị giác chuẩn",
-            },
-            {
-              value: "colorblind",
-              label: "Mù màu",
-              icon: "🎨",
-              desc: "Deuteranopia",
-            },
-            {
-              value: "nearsighted",
-              label: "Cận thị",
-              icon: "🔍",
-              desc: "Nhìn xa mờ",
-            },
-            {
-              value: "farsighted",
-              label: "Viễn thị",
-              icon: "�",
-              desc: "Nhìn gần mờ",
-            },
-            {
-              value: "lightsensitive",
-              label: "Nhạy sáng",
-              icon: "☀️",
-              desc: "Photophobia",
-            },
-            {
-              value: "cataract",
-              label: "Đục thủy tinh",
-              icon: "🌫️",
-              desc: "Cataract",
-            },
-            {
-              value: "glaucoma",
-              label: "Tăng nhãn áp",
-              icon: "🔘",
-              desc: "Mất thị giác ngoại vi",
-            },
-            {
-              value: "diabetic",
-              label: "Võng mạc ĐTĐ",
-              icon: "🩸",
-              desc: "Retinopathy",
-            },
-          ].map((f) => (
-            <button
-              key={f.value}
-              className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 text-left ${
-                filter === f.value
-                  ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg scale-105"
-                  : "bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-sky-400 hover:bg-white"
-              }`}
-              onClick={() => setFilter(f.value)}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl">{f.icon}</span>
-                <span className="font-bold">{f.label}</span>
+            <canvas
+              ref={canvasRef}
+              className="absolute inset-0 w-full h-full"
+            />
+            
+            {/* Flash Effect */}
+            {showFlash && (
+              <div className="absolute inset-0 bg-white animate-flash pointer-events-none" />
+            )}
+            
+            {/* Success Toast */}
+            {captureSuccess && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Da luu!</span>
               </div>
-              <div
-                className={`text-xs ${
-                  filter === f.value ? "text-white/80" : "text-gray-500"
-                }`}
-              >
-                {f.desc}
-              </div>
-            </button>
-          ))}
-        </div>
-        <p className="text-center text-xs text-gray-500 mt-4">
-          💡 Chọn filter để trải nghiệm cách những người có vấn đề về thị giác
-          nhìn thế giới
-        </p>
-      </div> */}
+            )}
 
-      {/* Chọn người (tự động hiện khi có nhiều người) */}
-      {detectedFaces > 1 && (
-        <div className="mt-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 shadow-xl w-full max-w-[1800px] mx-auto border-2 border-orange-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-2 text-center flex items-center justify-center gap-2">
-            <span className="text-2xl">👥</span>
-            Phát hiện {detectedFaces} người - Chọn để thử mắt kính riêng
-          </h3>
-          <p className="text-sm text-gray-600 text-center mb-4">
-            Mỗi người có thể thử mắt kính khác nhau!
-          </p>
-          <div className="flex gap-3 justify-center flex-wrap">
-            {Array.from({ length: detectedFaces }).map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedPerson(index)}
-                className={`px-6 py-3 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-110 ${
-                  selectedPerson === index
-                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg scale-110"
-                    : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:border-green-400"
-                }`}
-              >
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl mb-1">👤</span>
-                  <span>Người {index + 1}</span>
-                  {personGlasses[index] !== undefined && (
-                    <span className="text-xs mt-1 opacity-75">
-                      {glassesList[personGlasses[index]].name}
-                    </span>
-                  )}
+            {/* Face Info Badge */}
+            {detectedFaces > 0 && (
+              <div className="absolute top-3 right-3 bg-black/50 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full">
+                {detectedFaces} nguoi
+              </div>
+            )}
+
+            {/* AI Recommendation - Compact */}
+            {faceAnalysis && !multiPersonMode && (
+              <div className="absolute top-3 left-3 bg-black/50 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full">
+                {faceAnalysis.faceShape} {recommendedGlass && `• ${recommendedGlass.name}`}
+              </div>
+            )}
+
+            {/* Empathy Timer Overlay */}
+            {empathyMode && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                <div className="bg-black/70 backdrop-blur-sm text-white px-6 py-4 rounded-2xl">
+                  <p className="text-xs opacity-70 mb-1">Dang trai nghiem</p>
+                  <p className="text-3xl font-mono font-bold">{formatTime(empathyTimer)}</p>
+                  <button
+                    onClick={stopEmpathyMode}
+                    className="mt-3 bg-white/20 hover:bg-white/30 px-4 py-1.5 rounded-full text-sm"
+                  >
+                    Dung lai
+                  </button>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* CAPTURE BUTTON - Below camera on mobile */}
+          <div className="flex gap-2 mt-3 lg:hidden">
+            <button
+              onClick={capture}
+              disabled={loading}
+              className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Chup
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => setShowGallery(true)}
+              className="bg-white border-2 border-gray-200 text-gray-700 px-4 py-3 rounded-xl font-bold shadow active:scale-95 transition-all"
+            >
+              <span>{gallery.length}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* CONTROL PANEL - Desktop sidebar / Mobile tabs */}
+        <div className="w-full lg:w-72 flex-shrink-0">
+          {/* TAB NAVIGATION - Mobile only */}
+          <div className="flex lg:hidden bg-white rounded-xl shadow mb-3 p-1">
+            {[
+              { id: 'glasses', icon: '👓', label: 'Kinh' },
+              { id: 'effects', icon: '👁️', label: 'Hieu ung' },
+              { id: 'tools', icon: '🛠️', label: 'Cong cu' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === tab.id 
+                    ? 'bg-blue-500 text-white shadow' 
+                    : 'text-gray-600'
+                }`}
+              >
+                <span className="mr-1">{tab.icon}</span>
+                {tab.label}
               </button>
             ))}
           </div>
-          <p className="text-center text-xs text-gray-500 mt-4">
-            ⬇️ Sau khi chọn người, hãy chọn mắt kính bên dưới
-          </p>
-        </div>
-      )}
 
-      {/* Glasses selection với grid layout đẹp - 6 MẪU */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mt-6 w-full max-w-[1800px] mx-auto px-4">
-        {glassesList.map((g, idx) => {
-          const isActive =
-            multiPersonMode && selectedPerson !== null
-              ? personGlasses[selectedPerson] === idx
-              : glassIndex === idx;
-
-          return (
-            <button
-              key={idx}
-              onClick={() => {
-                if (multiPersonMode && selectedPerson !== null) {
-                  // Gán mắt kính cho người đã chọn
-                  setPersonGlasses((prev) => ({
-                    ...prev,
-                    [selectedPerson]: idx,
-                  }));
-                } else {
-                  // Mode đơn
-                  setGlassIndex(idx);
-                  setAutoMode(false);
-                }
-              }}
-              className={`rounded-2xl p-3 border-2 transition-all duration-300 transform hover:scale-110 ${
-                isActive
-                  ? "border-sky-500 shadow-xl scale-105 bg-gradient-to-br from-sky-50 to-blue-50"
-                  : "border-gray-200 hover:border-sky-300 bg-white hover:shadow-lg"
-              }`}
-              title={g.name}
-            >
-              <div className="bg-gray-50 rounded-xl p-2 mb-2">
-                <img
-                  src={g.url}
-                  alt={g.name}
-                  className="w-full h-auto object-contain"
-                />
+          {/* CONTENT PANELS */}
+          <div className="space-y-3 lg:space-y-4">
+            
+            {/* GLASSES TAB CONTENT */}
+            <div className={`${activeTab === 'glasses' ? 'block' : 'hidden lg:block'}`}>
+              {/* Toggle & Auto mode */}
+              <div className="bg-white rounded-xl shadow p-3 mb-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Hien mat kinh</span>
+                  <button
+                    onClick={() => setGlassesEnabled(!glassesEnabled)}
+                    className={`w-12 h-6 rounded-full transition-all ${
+                      glassesEnabled ? 'bg-blue-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transition-all ${
+                      glassesEnabled ? 'translate-x-6' : 'translate-x-0.5'
+                    }`} />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t">
+                  <span className="text-sm font-medium text-gray-700">Tu dong chon</span>
+                  <button
+                    onClick={() => setAutoMode(!autoMode)}
+                    className={`w-12 h-6 rounded-full transition-all ${
+                      autoMode ? 'bg-green-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transition-all ${
+                      autoMode ? 'translate-x-6' : 'translate-x-0.5'
+                    }`} />
+                  </button>
+                </div>
               </div>
-              <div
-                className={`text-xs font-semibold text-center ${
-                  isActive ? "text-sky-600" : "text-gray-600"
-                }`}
+
+              {/* Glasses Grid - Compact */}
+              <div className="bg-white rounded-xl shadow p-3">
+                <p className="text-xs text-gray-500 mb-2">Chon mat kinh</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {glassesList.map((g, idx) => (
+                    <button
+                      key={g.id}
+                      onClick={() => { setGlassIndex(idx); setAutoMode(false); }}
+                      className={`p-2 rounded-lg border-2 transition-all ${
+                        glassIndex === idx 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-transparent hover:bg-gray-50'
+                      }`}
+                    >
+                      <img src={g.url} alt={g.name} className="w-full h-8 object-contain" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            {/* EFFECTS TAB CONTENT */}
+            <div className={`${activeTab === 'effects' ? 'block' : 'hidden lg:block'}`}>
+              {/* Vision Filters - Compact */}
+              <div className="bg-white rounded-xl shadow p-3">
+                <p className="text-xs text-gray-500 mb-2">Trai nghiem thi giac</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { value: "none", label: "Binh thuong", icon: "👁️" },
+                    { value: "colorblind", label: "Mu mau", icon: "🎨" },
+                    { value: "nearsighted", label: "Can thi", icon: "🔍" },
+                    { value: "farsighted", label: "Vien thi", icon: "👓" },
+                    { value: "cataract", label: "Duc thuy tinh", icon: "🌫️" },
+                    { value: "glaucoma", label: "Tang nhan ap", icon: "🔘" },
+                  ].map((f) => (
+                    <button
+                      key={f.value}
+                      onClick={() => setFilter(f.value)}
+                      className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-left ${
+                        filter === f.value 
+                          ? "bg-blue-500 text-white" 
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      {f.icon} {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dioptri Sliders - Collapsible */}
+              <div className="bg-white rounded-xl shadow overflow-hidden mt-3">
+                <button
+                  onClick={() => setShowVisionPanel(!showVisionPanel)}
+                  className="w-full p-3 flex items-center justify-between text-sm font-medium"
+                >
+                  <span>Dieu chinh do (Dioptri)</span>
+                  <svg className={`w-4 h-4 transition-transform ${showVisionPanel ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {showVisionPanel && (
+                  <div className="px-3 pb-3 space-y-3">
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span>Can thi</span>
+                        <span className="font-mono">{visionSettings.myopia}D</span>
+                      </div>
+                      <input
+                        type="range" min="-10" max="0" step="0.5"
+                        value={visionSettings.myopia}
+                        onChange={(e) => setVisionSettings(p => ({ ...p, myopia: parseFloat(e.target.value) }))}
+                        className="w-full h-2 bg-gray-200 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span>Vien thi</span>
+                        <span className="font-mono">+{visionSettings.hyperopia}D</span>
+                      </div>
+                      <input
+                        type="range" min="0" max="6" step="0.5"
+                        value={visionSettings.hyperopia}
+                        onChange={(e) => setVisionSettings(p => ({ ...p, hyperopia: parseFloat(e.target.value) }))}
+                        className="w-full h-2 bg-gray-200 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span>Loan thi</span>
+                        <span className="font-mono">{visionSettings.astigmatism}D</span>
+                      </div>
+                      <input
+                        type="range" min="-6" max="0" step="0.5"
+                        value={visionSettings.astigmatism}
+                        onChange={(e) => setVisionSettings(p => ({ ...p, astigmatism: parseFloat(e.target.value) }))}
+                        className="w-full h-2 bg-gray-200 rounded-lg"
+                      />
+                    </div>
+                    <button
+                      onClick={() => setVisionSettings({ myopia: 0, hyperopia: 0, astigmatism: 0, axis: 0 })}
+                      className="w-full py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Empathy Mode - Compact */}
+              <div className="bg-gradient-to-r from-rose-500 to-orange-500 rounded-xl shadow p-3 mt-3 text-white">
+                <p className="text-xs font-bold mb-2">Empathy Mode</p>
+                {!empathyMode ? (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[
+                      { id: 'colorblind', label: 'Mu mau' },
+                      { id: 'glaucoma', label: 'Tang nhan ap' },
+                      { id: 'cataract', label: 'Duc thuy tinh' },
+                      { id: 'diabetic', label: 'Vong mac' },
+                    ].map(c => (
+                      <button
+                        key={c.id}
+                        onClick={() => startEmpathyMode(c.id)}
+                        className="bg-white/20 hover:bg-white/30 px-2 py-1.5 rounded text-xs"
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-2xl font-mono font-bold">{formatTime(empathyTimer)}</p>
+                    <button onClick={stopEmpathyMode} className="mt-2 bg-white text-rose-500 px-3 py-1 rounded text-xs font-bold">
+                      Dung
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* TOOLS TAB CONTENT */}
+            <div className={`${activeTab === 'tools' ? 'block' : 'hidden lg:block'}`}>
+              {/* Quick Actions */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={startColorTest}
+                  className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-xl text-sm font-bold flex flex-col items-center gap-1"
+                >
+                  <span className="text-xl">🧪</span>
+                  <span>Test mu mau</span>
+                </button>
+                <button
+                  onClick={() => setShowGallery(true)}
+                  className="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-xl text-sm font-bold flex flex-col items-center gap-1"
+                >
+                  <span className="text-xl">🖼️</span>
+                  <span>Bo suu tap ({gallery.length})</span>
+                </button>
+              </div>
+
+              {/* Desktop Capture Button */}
+              <button
+                onClick={capture}
+                disabled={loading}
+                className="hidden lg:flex w-full mt-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-xl font-bold shadow-lg items-center justify-center gap-2 disabled:opacity-50"
               >
-                {g.name}
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Chup anh
+                  </>
+                )}
+              </button>
+
+              {/* Share Buttons */}
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={() => {
+                    const url = `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent('Thu kinh tai VISTA EYE!')}`;
+                    window.open(url, '_blank', 'width=600,height=400');
+                  }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium"
+                >
+                  Facebook
+                </button>
+                <button
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({ title: 'VISTA EYE', text: 'Thu kinh ao!', url: window.location.href });
+                    } else {
+                      navigator.clipboard.writeText(window.location.href);
+                    }
+                  }}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg text-sm font-medium"
+                >
+                  Chia se
+                </button>
               </div>
-            </button>
-          );
-        })}
+            </div>
+
+          </div>
+        </div>
       </div>
 
-      {/* Hint cho chế độ nhiều người */}
-      {multiPersonMode && selectedPerson === null && detectedFaces > 1 && (
-        <div className="mt-4 text-center text-sm text-orange-600 font-medium">
-          ⚠️ Vui lòng chọn người trước khi chọn mắt kính
+      {/* COLOR BLIND TEST MODAL */}
+      {showColorTest && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <span>🧪</span> Test Mu Mau Ishihara
+              </h2>
+              <button
+                onClick={() => setShowColorTest(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                x
+              </button>
+            </div>
+
+            {!colorTestResult ? (
+              <div>
+                <div className="text-center mb-4">
+                  <p className="text-sm text-gray-600 mb-2">
+                    Cau hoi {colorTestIndex + 1} / {ishiharaPlates.length}
+                  </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-green-500 h-2 rounded-full transition-all"
+                      style={{ width: `${((colorTestIndex + 1) / ishiharaPlates.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* ISHIHARA PLATE SIMULATION */}
+                <div 
+                  className="w-64 h-64 mx-auto rounded-full flex items-center justify-center relative overflow-hidden mb-6"
+                  style={{ 
+                    background: `radial-gradient(circle, ${ishiharaPlates[colorTestIndex].bgColor} 0%, ${ishiharaPlates[colorTestIndex].bgColor} 100%)` 
+                  }}
+                >
+                  {/* Generate random dots pattern */}
+                  {[...Array(200)].map((_, i) => {
+                    const isNumber = Math.random() > 0.6;
+                    const size = Math.random() * 12 + 6;
+                    const x = Math.random() * 200 + 32;
+                    const y = Math.random() * 200 + 32;
+                    return (
+                      <div
+                        key={i}
+                        className="absolute rounded-full"
+                        style={{
+                          width: size,
+                          height: size,
+                          left: x,
+                          top: y,
+                          backgroundColor: isNumber ? ishiharaPlates[colorTestIndex].dotColor : ishiharaPlates[colorTestIndex].bgColor,
+                          opacity: 0.8 + Math.random() * 0.2,
+                        }}
+                      />
+                    );
+                  })}
+                  <span 
+                    className="text-6xl font-bold relative z-10"
+                    style={{ color: ishiharaPlates[colorTestIndex].dotColor }}
+                  >
+                    {ishiharaPlates[colorTestIndex].number}
+                  </span>
+                </div>
+
+                <p className="text-center text-gray-700 mb-4 font-medium">
+                  Ban nhin thay so nao?
+                </p>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {colorTestOptions.map((num, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => submitColorTestAnswer(num)}
+                      className="py-3 bg-gray-100 hover:bg-blue-500 hover:text-white rounded-xl font-bold text-lg transition-all"
+                    >
+                      {num === '?' ? 'Khong thay' : num}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center">
+                <div className={`text-6xl mb-4 ${colorTestResult.percentage >= 75 ? '' : ''}`}>
+                  {colorTestResult.percentage >= 75 ? '🎉' : colorTestResult.percentage >= 50 ? '😐' : '⚠️'}
+                </div>
+                <h3 className="text-2xl font-bold mb-2">Ket qua</h3>
+                <p className="text-4xl font-bold text-blue-600 mb-2">
+                  {colorTestResult.correct} / {colorTestResult.total}
+                </p>
+                <p className="text-gray-600 mb-4">{colorTestResult.percentage.toFixed(0)}% chinh xac</p>
+                <div className={`p-4 rounded-xl mb-4 ${
+                  colorTestResult.percentage >= 75 
+                    ? 'bg-green-100 text-green-800' 
+                    : colorTestResult.percentage >= 50 
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-red-100 text-red-800'
+                }`}>
+                  <p className="font-semibold">{colorTestResult.diagnosis}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowColorTest(false);
+                    setColorTestResult(null);
+                  }}
+                  className="bg-blue-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-600 transition-all"
+                >
+                  Dong
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
+
+      {/* GALLERY MODAL */}
+      {showGallery && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <span>🖼️</span> Bo suu tap cua ban
+              </h2>
+              <button
+                onClick={() => setShowGallery(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                x
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[70vh]">
+              {gallery.length === 0 ? (
+                <div className="text-center py-12">
+                  <span className="text-6xl mb-4 block">📷</span>
+                  <p className="text-gray-500">Chua co anh nao trong bo suu tap</p>
+                  <p className="text-sm text-gray-400 mt-2">Chup anh de bat dau suu tap!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {gallery.map((item) => (
+                    <div key={item.id} className="group relative rounded-xl overflow-hidden shadow-lg">
+                      <img 
+                        src={item.image} 
+                        alt={item.glassName}
+                        className="w-full h-40 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-all flex flex-col justify-end p-3">
+                        <p className="text-white font-semibold text-sm">{item.glassName}</p>
+                        <p className="text-white/70 text-xs">{item.timestamp}</p>
+                        <div className="flex gap-2 mt-2">
+                          <a
+                            href={item.image}
+                            download={`SeeBeyond_${item.id}.jpg`}
+                            className="bg-white/20 hover:bg-white/30 text-white px-2 py-1 rounded text-xs"
+                          >
+                            Tai xuong
+                          </a>
+                          <button
+                            onClick={() => {
+                              if (navigator.share) {
+                                navigator.share({
+                                  title: 'SeeBeyond Photo',
+                                  text: `Thu kinh ${item.glassName} tai SeeBeyond!`,
+                                  url: item.image,
+                                });
+                              } else {
+                                navigator.clipboard.writeText(item.image);
+                                alert('Da copy link anh!');
+                              }
+                            }}
+                            className="bg-white/20 hover:bg-white/30 text-white px-2 py-1 rounded text-xs"
+                          >
+                            Chia se
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {gallery.length > 0 && (
+              <div className="p-4 border-t bg-gray-50 flex justify-between items-center">
+                <p className="text-sm text-gray-600">{gallery.length} anh trong bo suu tap</p>
+                <button
+                  onClick={() => {
+                    if (window.confirm('Ban co chac muon xoa tat ca anh?')) {
+                      setGallery([]);
+                    }
+                  }}
+                  className="text-red-500 hover:text-red-700 text-sm font-semibold"
+                >
+                  Xoa tat ca
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
