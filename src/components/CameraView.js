@@ -113,7 +113,7 @@ export default function CameraView() {
   const [trackedFaces, setTrackedFaces] = useState([]); // State để trigger re-render UI
 
   // TINH NANG MOI: BAT/TAT MAT KINH
-  const [glassesEnabled, setGlassesEnabled] = useState(true);
+  const [glassesEnabled, setGlassesEnabled] = useState(false);
 
   // TINH NANG MOI: DIEU CHINH DO KHUC XA (Dioptri)
   const [visionSettings, setVisionSettings] = useState({
@@ -131,7 +131,7 @@ export default function CameraView() {
   const empathyTimerRef = useRef(null);
 
   // TINH NANG MOI: TAB NAVIGATION (for mobile)
-  const [activeTab, setActiveTab] = useState('glasses'); // glasses, effects, tools
+  const [activeTab, setActiveTab] = useState('effects'); // effects, glasses, tools
 
 
 
@@ -777,188 +777,210 @@ export default function CameraView() {
   };
 
   return (
-    <div className="flex flex-col w-full min-h-screen bg-gray-50">
+    <div className="flex flex-col w-full min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* MAIN LAYOUT - Responsive */}
-      <div className="flex flex-col lg:flex-row gap-3 w-full p-2 md:p-4 max-w-[1600px] mx-auto">
+      <div className="flex flex-col lg:flex-row gap-4 w-full p-3 md:p-6 lg:p-8 max-w-[1200px] mx-auto">
         
         {/* CAMERA SECTION */}
-        <div className="flex-1 relative">
-          <div className="relative rounded-2xl overflow-hidden shadow-xl bg-black aspect-[4/3]">
-            <Webcam
-              ref={webcamRef}
-              mirrored
-              className="w-full h-full object-cover"
-              videoConstraints={{
-                facingMode: "user",
-                aspectRatio: 1.333,
-              }}
-            />
-            <canvas
-              ref={canvasRef}
-              className="absolute inset-0 w-full h-full"
-            />
-            
-            {/* Flash Effect */}
-            {showFlash && (
-              <div className="absolute inset-0 bg-white animate-flash pointer-events-none" />
-            )}
-            
-            {/* Success Toast */}
-            {captureSuccess && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Da luu!</span>
+        <div className="w-full lg:flex-1 lg:max-w-[640px]">
+          {/* Camera Container */}
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-gray-900">
+            {/* Aspect ratio container - 4:3 on mobile, 4:3 on desktop too for face detection */}
+            <div className="relative w-full aspect-[4/3]">
+              <Webcam
+                ref={webcamRef}
+                mirrored={false}
+                className="absolute inset-0 w-full h-full object-cover"
+                videoConstraints={{
+                  facingMode: "user",
+                  width: { ideal: 1280 },
+                  height: { ideal: 960 },
+                }}
+              />
+              <canvas
+                ref={canvasRef}
+                className="absolute inset-0 w-full h-full"
+              />
+              
+              {/* Flash Effect */}
+              {showFlash && (
+                <div className="absolute inset-0 bg-white animate-flash pointer-events-none" />
+              )}
+              
+              {/* Top Bar - Info badges */}
+              <div className="absolute top-0 left-0 right-0 p-2 md:p-3 flex justify-between items-start">
+                {faceAnalysis && !multiPersonMode && (
+                  <div className="bg-black/50 backdrop-blur-md text-white text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-full font-medium">
+                    {faceAnalysis.faceShape}
+                  </div>
+                )}
+                {detectedFaces > 0 && (
+                  <div className="bg-black/50 backdrop-blur-md text-white text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-full font-medium ml-auto">
+                    {detectedFaces} khuon mat
+                  </div>
+                )}
               </div>
-            )}
 
-            {/* Face Info Badge */}
-            {detectedFaces > 0 && (
-              <div className="absolute top-3 right-3 bg-black/50 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full">
-                {detectedFaces} nguoi
-              </div>
-            )}
+              {/* Success Toast */}
+              {captureSuccess && (
+                <div className="absolute top-12 md:top-16 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-full shadow-xl flex items-center gap-2 text-xs md:text-sm font-medium animate-bounce">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Da luu!
+                </div>
+              )}
 
-            {/* AI Recommendation - Compact */}
-            {faceAnalysis && !multiPersonMode && (
-              <div className="absolute top-3 left-3 bg-black/50 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full">
-                {faceAnalysis.faceShape} {recommendedGlass && `• ${recommendedGlass.name}`}
-              </div>
-            )}
+              {/* Empathy Timer Overlay */}
+              {empathyMode && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                  <div className="bg-white/95 backdrop-blur-md text-gray-800 px-6 py-4 md:px-8 md:py-6 rounded-2xl shadow-2xl text-center">
+                    <p className="text-[10px] md:text-xs text-gray-500 mb-1 uppercase tracking-wide">Dang trai nghiem</p>
+                    <p className="text-3xl md:text-4xl font-mono font-bold text-blue-600">{formatTime(empathyTimer)}</p>
+                    <button
+                      onClick={stopEmpathyMode}
+                      className="mt-3 bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 md:px-6 md:py-2 rounded-full text-xs md:text-sm font-semibold transition-colors"
+                    >
+                      Ket thuc
+                    </button>
+                  </div>
+                </div>
+              )}
 
-            {/* Empathy Timer Overlay */}
-            {empathyMode && (
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                <div className="bg-black/70 backdrop-blur-sm text-white px-6 py-4 rounded-2xl">
-                  <p className="text-xs opacity-70 mb-1">Dang trai nghiem</p>
-                  <p className="text-3xl font-mono font-bold">{formatTime(empathyTimer)}</p>
+              {/* Bottom Action Bar */}
+              <div className="absolute bottom-0 left-0 right-0 p-2 md:p-4 bg-gradient-to-t from-black/80 to-transparent">
+                <div className="flex items-center justify-center gap-3 md:gap-4">
+                  {/* Gallery Button */}
                   <button
-                    onClick={stopEmpathyMode}
-                    className="mt-3 bg-white/20 hover:bg-white/30 px-4 py-1.5 rounded-full text-sm"
+                    onClick={() => setShowGallery(true)}
+                    className="w-9 h-9 md:w-11 md:h-11 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all active:scale-90"
                   >
-                    Dung lai
+                    <span className="text-[10px] md:text-xs font-bold">{gallery.length}</span>
+                  </button>
+                  
+                  {/* Main Capture Button */}
+                  <button
+                    onClick={capture}
+                    disabled={loading}
+                    className="w-12 h-12 md:w-16 md:h-16 bg-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-50 ring-4 ring-white/30"
+                  >
+                    {loading ? (
+                      <div className="w-4 h-4 md:w-6 md:h-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                    ) : (
+                      <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full" />
+                    )}
+                  </button>
+                  
+                  {/* Toggle Glasses Button */}
+                  <button
+                    onClick={() => setGlassesEnabled(!glassesEnabled)}
+                    className={`w-9 h-9 md:w-11 md:h-11 backdrop-blur-md rounded-full flex items-center justify-center transition-all active:scale-90 ${
+                      glassesEnabled ? 'bg-blue-500 text-white' : 'bg-white/20 text-white'
+                    }`}
+                  >
+                    <span className="text-sm md:text-lg">👓</span>
                   </button>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* CAPTURE BUTTON - Below camera on mobile */}
-          <div className="flex gap-2 mt-3 lg:hidden">
-            <button
-              onClick={capture}
-              disabled={loading}
-              className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Chup
-                </>
-              )}
-            </button>
-            <button
-              onClick={() => setShowGallery(true)}
-              className="bg-white border-2 border-gray-200 text-gray-700 px-4 py-3 rounded-xl font-bold shadow active:scale-95 transition-all"
-            >
-              <span>{gallery.length}</span>
-            </button>
+            </div>
           </div>
         </div>
 
-        {/* CONTROL PANEL - Desktop sidebar / Mobile tabs */}
-        <div className="w-full lg:w-72 flex-shrink-0">
-          {/* TAB NAVIGATION - Mobile only */}
-          <div className="flex lg:hidden bg-white rounded-xl shadow mb-3 p-1">
+        {/* CONTROL PANEL */}
+        <div className="w-full lg:w-[340px] flex-shrink-0 space-y-3">
+          
+          {/* INTRO CARD */}
+          <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 rounded-2xl shadow-lg p-3 md:p-4 text-white">
+            <h2 className="text-base md:text-lg font-bold mb-1 md:mb-2">Trai nghiem cac tat ve mat</h2>
+            <p className="text-[10px] md:text-xs text-white/80 leading-relaxed">
+              Chon hieu ung ben duoi de trai nghiem the gioi qua goc nhin cua nguoi co tat ve mat.
+            </p>
+          </div>
+
+          {/* TAB NAVIGATION */}
+          <div className="bg-white rounded-2xl shadow-lg p-1.5 flex gap-1">
             {[
-              { id: 'glasses', icon: '👓', label: 'Kinh' },
-              { id: 'effects', icon: '👁️', label: 'Hieu ung' },
-              { id: 'tools', icon: '🛠️', label: 'Cong cu' },
+              { id: 'effects', icon: '👁️', label: 'Thi giac' },
+              { id: 'glasses', icon: '👓', label: 'Thu kinh' },
+              { id: 'tools', icon: '🧪', label: 'Cong cu' },
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                   activeTab === tab.id 
-                    ? 'bg-blue-500 text-white shadow' 
-                    : 'text-gray-600'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                <span className="mr-1">{tab.icon}</span>
+                <span className="mr-1.5">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
           </div>
 
           {/* CONTENT PANELS */}
-          <div className="space-y-3 lg:space-y-4">
+          <div className="space-y-3">
             
             {/* GLASSES TAB CONTENT */}
-            <div className={`${activeTab === 'glasses' ? 'block' : 'hidden lg:block'}`}>
-              {/* Toggle & Auto mode */}
-              <div className="bg-white rounded-xl shadow p-3 mb-3">
+            <div className={`${activeTab === 'glasses' ? 'block' : 'hidden'}`}>
+              {/* Toggle glasses */}
+              <div className="bg-white rounded-2xl shadow-lg p-4 mb-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Hien mat kinh</span>
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-800">Hien thi mat kinh</h3>
+                    <p className="text-xs text-gray-500">Bat de thu kinh tren khuon mat</p>
+                  </div>
                   <button
                     onClick={() => setGlassesEnabled(!glassesEnabled)}
-                    className={`w-12 h-6 rounded-full transition-all ${
+                    className={`w-14 h-7 rounded-full transition-all relative ${
                       glassesEnabled ? 'bg-blue-500' : 'bg-gray-300'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full shadow transition-all ${
-                      glassesEnabled ? 'translate-x-6' : 'translate-x-0.5'
-                    }`} />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t">
-                  <span className="text-sm font-medium text-gray-700">Tu dong chon</span>
-                  <button
-                    onClick={() => setAutoMode(!autoMode)}
-                    className={`w-12 h-6 rounded-full transition-all ${
-                      autoMode ? 'bg-green-500' : 'bg-gray-300'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 bg-white rounded-full shadow transition-all ${
-                      autoMode ? 'translate-x-6' : 'translate-x-0.5'
+                    <div className={`w-6 h-6 bg-white rounded-full shadow absolute top-0.5 transition-all ${
+                      glassesEnabled ? 'right-0.5' : 'left-0.5'
                     }`} />
                   </button>
                 </div>
               </div>
 
-              {/* Glasses Grid - Compact */}
-              <div className="bg-white rounded-xl shadow p-3">
-                <p className="text-xs text-gray-500 mb-2">Chon mat kinh</p>
-                <div className="grid grid-cols-3 gap-2">
+              {/* Glasses Grid */}
+              <div className={`bg-white rounded-2xl shadow-lg p-4 transition-opacity ${glassesEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold text-gray-800">Chon kieu kinh</h3>
+                  <button
+                    onClick={() => setAutoMode(!autoMode)}
+                    className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
+                      autoMode ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    }`}
+                  >
+                    {autoMode ? '✓ Tu dong' : 'Tu dong'}
+                  </button>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
                   {glassesList.map((g, idx) => (
                     <button
                       key={g.id}
                       onClick={() => { setGlassIndex(idx); setAutoMode(false); }}
-                      className={`p-2 rounded-lg border-2 transition-all ${
+                      className={`aspect-square p-2 rounded-xl border-2 transition-all hover:shadow-md ${
                         glassIndex === idx 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-transparent hover:bg-gray-50'
+                          ? 'border-blue-500 bg-blue-50 shadow-md' 
+                          : 'border-gray-100 hover:border-gray-200 bg-gray-50'
                       }`}
                     >
-                      <img src={g.url} alt={g.name} className="w-full h-8 object-contain" />
+                      <img src={g.url} alt={g.name} className="w-full h-full object-contain" />
                     </button>
                   ))}
                 </div>
               </div>
-
             </div>
 
             {/* EFFECTS TAB CONTENT */}
-            <div className={`${activeTab === 'effects' ? 'block' : 'hidden lg:block'}`}>
-              {/* Vision Filters - Compact */}
-              <div className="bg-white rounded-xl shadow p-3">
-                <p className="text-xs text-gray-500 mb-2">Trai nghiem thi giac</p>
-                <div className="grid grid-cols-2 gap-1.5">
+            <div className={`${activeTab === 'effects' ? 'block' : 'hidden'}`}>
+              {/* Vision Filters */}
+              <div className="bg-white rounded-2xl shadow-lg p-4">
+                <h3 className="text-sm font-bold text-gray-800 mb-3">Trai nghiem thi giac</h3>
+                <div className="grid grid-cols-3 gap-2">
                   {[
                     { value: "none", label: "Binh thuong", icon: "👁️" },
                     { value: "colorblind", label: "Mu mau", icon: "🎨" },
@@ -970,102 +992,104 @@ export default function CameraView() {
                     <button
                       key={f.value}
                       onClick={() => setFilter(f.value)}
-                      className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-left ${
+                      className={`p-2.5 rounded-xl text-xs font-medium transition-all flex flex-col items-center gap-1 ${
                         filter === f.value 
-                          ? "bg-blue-500 text-white" 
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          ? "bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-md" 
+                          : "bg-gray-50 text-gray-600 hover:bg-gray-100"
                       }`}
                     >
-                      {f.icon} {f.label}
+                      <span className="text-lg">{f.icon}</span>
+                      <span>{f.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Dioptri Sliders - Collapsible */}
-              <div className="bg-white rounded-xl shadow overflow-hidden mt-3">
+              {/* Dioptri Sliders */}
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden mt-3">
                 <button
                   onClick={() => setShowVisionPanel(!showVisionPanel)}
-                  className="w-full p-3 flex items-center justify-between text-sm font-medium"
+                  className="w-full p-4 flex items-center justify-between"
                 >
-                  <span>Dieu chinh do (Dioptri)</span>
-                  <svg className={`w-4 h-4 transition-transform ${showVisionPanel ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="text-sm font-bold text-gray-800">Dieu chinh Dioptri</span>
+                  <svg className={`w-5 h-5 text-gray-400 transition-transform ${showVisionPanel ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 {showVisionPanel && (
-                  <div className="px-3 pb-3 space-y-3">
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Can thi</span>
-                        <span className="font-mono">{visionSettings.myopia}D</span>
+                  <div className="px-4 pb-4 space-y-4 border-t">
+                    <div className="pt-3">
+                      <div className="flex justify-between text-xs mb-2">
+                        <span className="text-gray-600">Can thi</span>
+                        <span className="font-mono font-bold text-blue-600">{visionSettings.myopia}D</span>
                       </div>
                       <input
                         type="range" min="-10" max="0" step="0.5"
                         value={visionSettings.myopia}
                         onChange={(e) => setVisionSettings(p => ({ ...p, myopia: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-gray-200 rounded-lg"
+                        className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Vien thi</span>
-                        <span className="font-mono">+{visionSettings.hyperopia}D</span>
+                      <div className="flex justify-between text-xs mb-2">
+                        <span className="text-gray-600">Vien thi</span>
+                        <span className="font-mono font-bold text-green-600">+{visionSettings.hyperopia}D</span>
                       </div>
                       <input
                         type="range" min="0" max="6" step="0.5"
                         value={visionSettings.hyperopia}
                         onChange={(e) => setVisionSettings(p => ({ ...p, hyperopia: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-gray-200 rounded-lg"
+                        className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Loan thi</span>
-                        <span className="font-mono">{visionSettings.astigmatism}D</span>
+                      <div className="flex justify-between text-xs mb-2">
+                        <span className="text-gray-600">Loan thi</span>
+                        <span className="font-mono font-bold text-orange-600">{visionSettings.astigmatism}D</span>
                       </div>
                       <input
                         type="range" min="-6" max="0" step="0.5"
                         value={visionSettings.astigmatism}
                         onChange={(e) => setVisionSettings(p => ({ ...p, astigmatism: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-gray-200 rounded-lg"
+                        className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer"
                       />
                     </div>
                     <button
                       onClick={() => setVisionSettings({ myopia: 0, hyperopia: 0, astigmatism: 0, axis: 0 })}
-                      className="w-full py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs"
+                      className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-medium text-gray-600"
                     >
-                      Reset
+                      Reset ve mac dinh
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Empathy Mode - Compact */}
-              <div className="bg-gradient-to-r from-rose-500 to-orange-500 rounded-xl shadow p-3 mt-3 text-white">
-                <p className="text-xs font-bold mb-2">Empathy Mode</p>
+              {/* Empathy Mode */}
+              <div className="bg-gradient-to-br from-rose-500 to-orange-500 rounded-2xl shadow-lg p-4 mt-3 text-white">
+                <h3 className="text-sm font-bold mb-3">Empathy Mode</h3>
                 {!empathyMode ? (
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-2 gap-2">
                     {[
-                      { id: 'colorblind', label: 'Mu mau' },
-                      { id: 'glaucoma', label: 'Tang nhan ap' },
-                      { id: 'cataract', label: 'Duc thuy tinh' },
-                      { id: 'diabetic', label: 'Vong mac' },
+                      { id: 'colorblind', label: 'Mu mau', icon: '🎨' },
+                      { id: 'glaucoma', label: 'Tang nhan ap', icon: '🔘' },
+                      { id: 'cataract', label: 'Duc thuy tinh', icon: '🌫️' },
+                      { id: 'diabetic', label: 'Vong mac', icon: '👁️' },
                     ].map(c => (
                       <button
                         key={c.id}
                         onClick={() => startEmpathyMode(c.id)}
-                        className="bg-white/20 hover:bg-white/30 px-2 py-1.5 rounded text-xs"
+                        className="bg-white/20 hover:bg-white/30 p-2.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2"
                       >
+                        <span>{c.icon}</span>
                         {c.label}
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center">
-                    <p className="text-2xl font-mono font-bold">{formatTime(empathyTimer)}</p>
-                    <button onClick={stopEmpathyMode} className="mt-2 bg-white text-rose-500 px-3 py-1 rounded text-xs font-bold">
-                      Dung
+                  <div className="text-center py-2">
+                    <p className="text-3xl font-mono font-bold">{formatTime(empathyTimer)}</p>
+                    <button onClick={stopEmpathyMode} className="mt-3 bg-white text-rose-500 px-5 py-2 rounded-full text-xs font-bold hover:bg-gray-100 transition-colors">
+                      Ket thuc
                     </button>
                   </div>
                 )}
@@ -1073,55 +1097,44 @@ export default function CameraView() {
             </div>
 
             {/* TOOLS TAB CONTENT */}
-            <div className={`${activeTab === 'tools' ? 'block' : 'hidden lg:block'}`}>
+            <div className={`${activeTab === 'tools' ? 'block' : 'hidden'}`}>
               {/* Quick Actions */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={startColorTest}
-                  className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-xl text-sm font-bold flex flex-col items-center gap-1"
-                >
-                  <span className="text-xl">🧪</span>
-                  <span>Test mu mau</span>
-                </button>
-                <button
-                  onClick={() => setShowGallery(true)}
-                  className="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-xl text-sm font-bold flex flex-col items-center gap-1"
-                >
-                  <span className="text-xl">🖼️</span>
-                  <span>Bo suu tap ({gallery.length})</span>
-                </button>
+              <div className="bg-white rounded-2xl shadow-lg p-4">
+                <h3 className="text-sm font-bold text-gray-800 mb-3">Cong cu</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={startColorTest}
+                    className="bg-gradient-to-br from-green-400 to-emerald-500 text-white p-4 rounded-xl font-medium flex flex-col items-center gap-2 hover:shadow-lg transition-all active:scale-95"
+                  >
+                    <span className="text-2xl">🧪</span>
+                    <span className="text-xs">Test mu mau</span>
+                  </button>
+                  <button
+                    onClick={() => setShowGallery(true)}
+                    className="bg-gradient-to-br from-purple-400 to-pink-500 text-white p-4 rounded-xl font-medium flex flex-col items-center gap-2 hover:shadow-lg transition-all active:scale-95"
+                  >
+                    <span className="text-2xl">🖼️</span>
+                    <span className="text-xs">Bo suu tap ({gallery.length})</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Desktop Capture Button */}
-              <button
-                onClick={capture}
-                disabled={loading}
-                className="hidden lg:flex w-full mt-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-xl font-bold shadow-lg items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              {/* Share */}
+              <div className="bg-white rounded-2xl shadow-lg p-4 mt-3">
+                <h3 className="text-sm font-bold text-gray-800 mb-3">Chia se</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const url = `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent('Thu kinh tai VISTA EYE!')}`;
+                      window.open(url, '_blank', 'width=600,height=400');
+                    }}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                     </svg>
-                    Chup anh
-                  </>
-                )}
-              </button>
-
-              {/* Share Buttons */}
-              <div className="flex gap-2 mt-3">
-                <button
-                  onClick={() => {
-                    const url = `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent('Thu kinh tai VISTA EYE!')}`;
-                    window.open(url, '_blank', 'width=600,height=400');
-                  }}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium"
-                >
-                  Facebook
-                </button>
+                    Facebook
+                  </button>
                 <button
                   onClick={() => {
                     if (navigator.share) {
@@ -1130,10 +1143,14 @@ export default function CameraView() {
                       navigator.clipboard.writeText(window.location.href);
                     }
                   }}
-                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg text-sm font-medium"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
                   Chia se
                 </button>
+                </div>
               </div>
             </div>
 
