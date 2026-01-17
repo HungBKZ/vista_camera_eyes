@@ -751,15 +751,15 @@ export default function CameraView() {
   };
 
   return (
-    <div className="flex flex-col w-full min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="flex flex-col w-full min-h-screen bg-sky-50">
       {/* MAIN LAYOUT - Responsive */}
-      <div className="flex flex-col lg:flex-row gap-4 w-full p-3 md:p-6 lg:p-8 max-w-[1200px] mx-auto">
+      <div className="flex flex-col lg:flex-row gap-5 w-full p-3 md:p-5 lg:p-6 max-w-[1280px] mx-auto">
         
         {/* CAMERA SECTION */}
-        <div className="w-full lg:flex-1 lg:max-w-[640px]">
+        <div className="w-full lg:flex-1">
           {/* Camera Container */}
-          <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-gray-900">
-            {/* Aspect ratio container - 4:3 on mobile, 4:3 on desktop too for face detection */}
+          <div className="relative rounded-lg overflow-hidden shadow-lg bg-sky-600 border border-sky-100">
+            {/* Aspect ratio container */}
             <div className="relative w-full aspect-[4/3]">
               <Webcam
                 ref={webcamRef}
@@ -784,75 +784,78 @@ export default function CameraView() {
               {/* Top Bar - Info badges */}
               <div className="absolute top-0 left-0 right-0 p-2 md:p-3 flex justify-between items-start">
                 {faceAnalysis && !multiPersonMode && (
-                  <div className="bg-black/50 backdrop-blur-md text-white text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-full font-medium">
+                  <div className="bg-sky-500/80 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 rounded font-medium">
                     {faceAnalysis.faceShape}
                   </div>
                 )}
                 {detectedFaces > 0 && (
-                  <div className="bg-black/50 backdrop-blur-md text-white text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-full font-medium ml-auto">
-                    {detectedFaces} khuon mat
+                  <div className="bg-sky-500/80 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 rounded font-medium ml-auto">
+                    Phát hiện: {detectedFaces} khuôn mặt
                   </div>
                 )}
               </div>
 
               {/* Success Toast */}
               {captureSuccess && (
-                <div className="absolute top-12 md:top-16 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-full shadow-xl flex items-center gap-2 text-xs md:text-sm font-medium animate-bounce">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Da luu!
+                <div className="absolute top-12 md:top-14 left-1/2 -translate-x-1/2 bg-sky-600 text-white px-4 py-2 rounded shadow-lg text-xs md:text-sm font-medium">
+                  Đã lưu thành công
                 </div>
               )}
 
               {/* Empathy Timer Overlay */}
               {empathyMode && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                  <div className="bg-white/95 backdrop-blur-md text-gray-800 px-6 py-4 md:px-8 md:py-6 rounded-2xl shadow-2xl text-center">
-                    <p className="text-[10px] md:text-xs text-gray-500 mb-1 uppercase tracking-wide">Dang trai nghiem</p>
-                    <p className="text-3xl md:text-4xl font-mono font-bold text-blue-600">{formatTime(empathyTimer)}</p>
+                <div className="absolute inset-0 flex items-center justify-center bg-sky-600/50">
+                  <div className="bg-white text-sky-700 px-6 py-5 rounded-lg shadow-xl text-center">
+                    <p className="text-xs text-sky-500 mb-2 uppercase tracking-wider">Thời gian trải nghiệm</p>
+                    <p className="text-3xl font-mono font-bold text-sky-600">{formatTime(empathyTimer)}</p>
                     <button
                       onClick={stopEmpathyMode}
-                      className="mt-3 bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 md:px-6 md:py-2 rounded-full text-xs md:text-sm font-semibold transition-colors"
+                      className="mt-4 bg-sky-500 hover:bg-sky-400 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
                     >
-                      Ket thuc
+                      Kết thúc
                     </button>
                   </div>
                 </div>
               )}
 
               {/* Bottom Action Bar */}
-              <div className="absolute bottom-0 left-0 right-0 p-2 md:p-4 bg-gradient-to-t from-black/80 to-transparent">
-                <div className="flex items-center justify-center gap-3 md:gap-4">
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-sky-600/90 to-transparent">
+                <div className="flex items-center justify-center gap-4">
                   {/* Gallery Button */}
                   <button
                     onClick={() => setShowGallery(true)}
-                    className="w-9 h-9 md:w-11 md:h-11 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all active:scale-90"
+                    className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all"
+                    title="Bộ sưu tập"
                   >
-                    <span className="text-[10px] md:text-xs font-bold">{gallery.length}</span>
+                    <span className="text-xs font-medium">{gallery.length}</span>
                   </button>
                   
                   {/* Main Capture Button */}
                   <button
                     onClick={capture}
                     disabled={loading}
-                    className="w-12 h-12 md:w-16 md:h-16 bg-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-50 ring-4 ring-white/30"
+                    className="w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-sky-50 active:scale-95 transition-all disabled:opacity-50"
+                    title="Chụp ảnh"
                   >
                     {loading ? (
-                      <div className="w-4 h-4 md:w-6 md:h-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-sky-300 border-t-sky-600 rounded-full animate-spin" />
                     ) : (
-                      <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full" />
+                      <div className="w-10 h-10 bg-sky-600 rounded-full" />
                     )}
                   </button>
                   
                   {/* Toggle Glasses Button */}
                   <button
                     onClick={() => setGlassesEnabled(!glassesEnabled)}
-                    className={`w-9 h-9 md:w-11 md:h-11 backdrop-blur-md rounded-full flex items-center justify-center transition-all active:scale-90 ${
-                      glassesEnabled ? 'bg-blue-500 text-white' : 'bg-white/20 text-white'
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                      glassesEnabled ? 'bg-sky-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'
                     }`}
+                    title={glassesEnabled ? 'Tắt kính' : 'Bật kính'}
                   >
-                    <span className="text-sm md:text-lg">👓</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -861,57 +864,56 @@ export default function CameraView() {
         </div>
 
         {/* CONTROL PANEL */}
-        <div className="w-full lg:w-[340px] flex-shrink-0 space-y-3">
+        <div className="w-full lg:w-[320px] flex-shrink-0 space-y-4">
           
           {/* INTRO CARD */}
-          <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 rounded-2xl shadow-lg p-3 md:p-4 text-white">
-            <h2 className="text-base md:text-lg font-bold mb-1 md:mb-2">Trai nghiem cac tat ve mat</h2>
-            <p className="text-[10px] md:text-xs text-white/80 leading-relaxed">
-              Chon hieu ung ben duoi de trai nghiem the gioi qua goc nhin cua nguoi co tat ve mat.
+          <div className="bg-sky-500 rounded-lg p-4 text-white">
+            <h2 className="text-sm md:text-base font-semibold mb-1">Mô phỏng tật khuyết mắt</h2>
+            <p className="text-xs text-sky-100 leading-relaxed">
+              Trải nghiệm góc nhìn của người có các vấn đề về thị lực để hiểu hơn về bệnh lý mắt.
             </p>
           </div>
 
           {/* TAB NAVIGATION */}
-          <div className="bg-white rounded-2xl shadow-lg p-1.5 flex gap-1">
+          <div className="bg-white rounded-lg shadow border border-sky-200 p-1 flex">
             {[
-              { id: 'effects', icon: '👁️', label: 'Thi giac' },
-              { id: 'glasses', icon: '👓', label: 'Thu kinh' },
-              { id: 'tools', icon: '🧪', label: 'Cong cu' },
+              { id: 'effects', label: 'Thị giác' },
+              { id: 'glasses', label: 'Thử kính' },
+              { id: 'tools', label: 'Công cụ' },
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                className={`flex-1 py-2 rounded text-sm font-medium transition-all ${
                   activeTab === tab.id 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md' 
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    ? 'bg-sky-500 text-white' 
+                    : 'text-sky-600 hover:text-sky-700 hover:bg-sky-50'
                 }`}
               >
-                <span className="mr-1.5">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
           </div>
 
           {/* CONTENT PANELS */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             
             {/* GLASSES TAB CONTENT */}
             <div className={`${activeTab === 'glasses' ? 'block' : 'hidden'}`}>
               {/* Toggle glasses */}
-              <div className="bg-white rounded-2xl shadow-lg p-4 mb-3">
+              <div className="bg-white rounded-lg shadow border border-sky-200 p-4 mb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-bold text-gray-800">Hien thi mat kinh</h3>
-                    <p className="text-xs text-gray-500">Bat de thu kinh tren khuon mat</p>
+                    <h3 className="text-sm font-medium text-sky-700">Hiển thị mắt kính</h3>
+                    <p className="text-xs text-sky-600">Bật để thử kính trên khuôn mặt</p>
                   </div>
                   <button
                     onClick={() => setGlassesEnabled(!glassesEnabled)}
-                    className={`w-14 h-7 rounded-full transition-all relative ${
-                      glassesEnabled ? 'bg-blue-500' : 'bg-gray-300'
+                    className={`w-12 h-6 rounded-full transition-all relative ${
+                      glassesEnabled ? 'bg-sky-600' : 'bg-sky-200'
                     }`}
                   >
-                    <div className={`w-6 h-6 bg-white rounded-full shadow absolute top-0.5 transition-all ${
+                    <div className={`w-5 h-5 bg-white rounded-full shadow absolute top-0.5 transition-all ${
                       glassesEnabled ? 'right-0.5' : 'left-0.5'
                     }`} />
                   </button>
@@ -919,16 +921,16 @@ export default function CameraView() {
               </div>
 
               {/* Glasses Grid */}
-              <div className={`bg-white rounded-2xl shadow-lg p-4 transition-opacity ${glassesEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+              <div className={`bg-white rounded-lg shadow border border-sky-200 p-4 transition-opacity ${glassesEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-gray-800">Chon kieu kinh</h3>
+                  <h3 className="text-sm font-medium text-sky-700">Chọn kiểu kính</h3>
                   <button
                     onClick={() => setAutoMode(!autoMode)}
-                    className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
-                      autoMode ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    className={`text-xs px-2 py-1 rounded font-medium transition-all ${
+                      autoMode ? 'bg-sky-100 text-sky-600' : 'bg-sky-50 text-sky-400'
                     }`}
                   >
-                    {autoMode ? '✓ Tu dong' : 'Tu dong'}
+                    {autoMode ? 'Tự động' : 'Thủ công'}
                   </button>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
@@ -936,10 +938,10 @@ export default function CameraView() {
                     <button
                       key={g.id}
                       onClick={() => { setGlassIndex(idx); setAutoMode(false); }}
-                      className={`aspect-square p-2 rounded-xl border-2 transition-all hover:shadow-md ${
+                      className={`aspect-square p-1.5 rounded border-2 transition-all ${
                         glassIndex === idx 
-                          ? 'border-blue-500 bg-blue-50 shadow-md' 
-                          : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+                          ? 'border-sky-600 bg-sky-50' 
+                          : 'border-sky-100 hover:border-sky-200 bg-sky-50'
                       }`}
                     >
                       <img src={g.url} alt={g.name} className="w-full h-full object-contain" />
@@ -952,118 +954,116 @@ export default function CameraView() {
             {/* EFFECTS TAB CONTENT */}
             <div className={`${activeTab === 'effects' ? 'block' : 'hidden'}`}>
               {/* Vision Filters */}
-              <div className="bg-white rounded-2xl shadow-lg p-4">
-                <h3 className="text-sm font-bold text-gray-800 mb-3">Trai nghiem thi giac</h3>
-                <div className="grid grid-cols-3 gap-2">
+              <div className="bg-white rounded-lg shadow border border-sky-200 p-4">
+                <h3 className="text-sm font-medium text-sky-700 mb-3">Chọn loại tật khuyết</h3>
+                <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: "none", label: "Binh thuong", icon: "👁️" },
-                    { value: "colorblind", label: "Mu mau", icon: "🎨" },
-                    { value: "nearsighted", label: "Can thi", icon: "🔍" },
-                    { value: "farsighted", label: "Vien thi", icon: "👓" },
-                    { value: "cataract", label: "Duc thuy tinh", icon: "🌫️" },
-                    { value: "glaucoma", label: "Tang nhan ap", icon: "🔘" },
+                    { value: "none", label: "Bình thường" },
+                    { value: "colorblind", label: "Mù màu" },
+                    { value: "nearsighted", label: "Cận thị" },
+                    { value: "farsighted", label: "Viễn thị" },
+                    { value: "cataract", label: "Đục thủy tinh thể" },
+                    { value: "glaucoma", label: "Tăng nhãn áp" },
                   ].map((f) => (
                     <button
                       key={f.value}
                       onClick={() => setFilter(f.value)}
-                      className={`p-2.5 rounded-xl text-xs font-medium transition-all flex flex-col items-center gap-1 ${
+                      className={`py-2.5 px-3 rounded text-xs font-medium transition-all text-left ${
                         filter === f.value 
-                          ? "bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-md" 
-                          : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                          ? "bg-sky-500 text-white" 
+                          : "bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-100"
                       }`}
                     >
-                      <span className="text-lg">{f.icon}</span>
-                      <span>{f.label}</span>
+                      {f.label}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Dioptri Sliders */}
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden mt-3">
+              <div className="bg-white rounded-lg shadow border border-sky-200 overflow-hidden mt-3">
                 <button
                   onClick={() => setShowVisionPanel(!showVisionPanel)}
-                  className="w-full p-4 flex items-center justify-between"
+                  className="w-full p-4 flex items-center justify-between hover:bg-sky-50"
                 >
-                  <span className="text-sm font-bold text-gray-800">Dieu chinh Dioptri</span>
-                  <svg className={`w-5 h-5 text-gray-400 transition-transform ${showVisionPanel ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="text-sm font-medium text-sky-700">Điều chỉnh độ khúc xạ</span>
+                  <svg className={`w-4 h-4 text-sky-400 transition-transform ${showVisionPanel ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 {showVisionPanel && (
-                  <div className="px-4 pb-4 space-y-4 border-t">
+                  <div className="px-4 pb-4 space-y-4 border-t border-sky-100">
                     <div className="pt-3">
                       <div className="flex justify-between text-xs mb-2">
-                        <span className="text-gray-600">Can thi</span>
-                        <span className="font-mono font-bold text-blue-600">{visionSettings.myopia}D</span>
+                        <span className="text-sky-600">Cận thị (Myopia)</span>
+                        <span className="font-mono font-medium text-sky-700">{visionSettings.myopia}D</span>
                       </div>
                       <input
                         type="range" min="-10" max="0" step="0.5"
                         value={visionSettings.myopia}
                         onChange={(e) => setVisionSettings(p => ({ ...p, myopia: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer"
+                        className="w-full h-1.5 bg-sky-200 rounded-full appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-2">
-                        <span className="text-gray-600">Vien thi</span>
-                        <span className="font-mono font-bold text-green-600">+{visionSettings.hyperopia}D</span>
+                        <span className="text-sky-600">Viễn thị (Hyperopia)</span>
+                        <span className="font-mono font-medium text-sky-700">+{visionSettings.hyperopia}D</span>
                       </div>
                       <input
                         type="range" min="0" max="6" step="0.5"
                         value={visionSettings.hyperopia}
                         onChange={(e) => setVisionSettings(p => ({ ...p, hyperopia: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer"
+                        className="w-full h-1.5 bg-sky-200 rounded-full appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-2">
-                        <span className="text-gray-600">Loan thi</span>
-                        <span className="font-mono font-bold text-orange-600">{visionSettings.astigmatism}D</span>
+                        <span className="text-sky-600">Loạn thị (Astigmatism)</span>
+                        <span className="font-mono font-medium text-sky-700">{visionSettings.astigmatism}D</span>
                       </div>
                       <input
                         type="range" min="-6" max="0" step="0.5"
                         value={visionSettings.astigmatism}
                         onChange={(e) => setVisionSettings(p => ({ ...p, astigmatism: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer"
+                        className="w-full h-1.5 bg-sky-200 rounded-full appearance-none cursor-pointer"
                       />
                     </div>
                     <button
                       onClick={() => setVisionSettings({ myopia: 0, hyperopia: 0, astigmatism: 0, axis: 0 })}
-                      className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-medium text-gray-600"
+                      className="w-full py-2 bg-sky-100 hover:bg-sky-200 rounded text-xs font-medium text-sky-600"
                     >
-                      Reset ve mac dinh
+                      Đặt lại mặc định
                     </button>
                   </div>
                 )}
               </div>
 
               {/* Empathy Mode */}
-              <div className="bg-gradient-to-br from-rose-500 to-orange-500 rounded-2xl shadow-lg p-4 mt-3 text-white">
-                <h3 className="text-sm font-bold mb-3">Empathy Mode</h3>
+              <div className="bg-sky-500 rounded-lg p-4 mt-3 text-white">
+                <h3 className="text-sm font-medium mb-3">Chế độ trải nghiệm</h3>
                 {!empathyMode ? (
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { id: 'colorblind', label: 'Mu mau', icon: '🎨' },
-                      { id: 'glaucoma', label: 'Tang nhan ap', icon: '🔘' },
-                      { id: 'cataract', label: 'Duc thuy tinh', icon: '🌫️' },
-                      { id: 'diabetic', label: 'Vong mac', icon: '👁️' },
+                      { id: 'colorblind', label: 'Mù màu' },
+                      { id: 'glaucoma', label: 'Tăng nhãn áp' },
+                      { id: 'cataract', label: 'Đục thủy tinh' },
+                      { id: 'diabetic', label: 'Bệnh võng mạc' },
                     ].map(c => (
                       <button
                         key={c.id}
                         onClick={() => startEmpathyMode(c.id)}
-                        className="bg-white/20 hover:bg-white/30 p-2.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2"
+                        className="bg-sky-400 hover:bg-sky-300 py-2 px-3 rounded text-xs font-medium transition-all"
                       >
-                        <span>{c.icon}</span>
                         {c.label}
                       </button>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-2">
-                    <p className="text-3xl font-mono font-bold">{formatTime(empathyTimer)}</p>
-                    <button onClick={stopEmpathyMode} className="mt-3 bg-white text-rose-500 px-5 py-2 rounded-full text-xs font-bold hover:bg-gray-100 transition-colors">
-                      Ket thuc
+                    <p className="text-2xl font-mono font-bold">{formatTime(empathyTimer)}</p>
+                    <button onClick={stopEmpathyMode} className="mt-3 bg-white text-sky-600 px-4 py-1.5 rounded text-xs font-medium hover:bg-sky-50 transition-colors">
+                      Kết thúc
                     </button>
                   </div>
                 )}
@@ -1073,57 +1073,21 @@ export default function CameraView() {
             {/* TOOLS TAB CONTENT */}
             <div className={`${activeTab === 'tools' ? 'block' : 'hidden'}`}>
               {/* Quick Actions */}
-              <div className="bg-white rounded-2xl shadow-lg p-4">
-                <h3 className="text-sm font-bold text-gray-800 mb-3">Cong cu</h3>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white rounded-lg shadow border border-sky-200 p-4">
+                <h3 className="text-sm font-medium text-sky-700 mb-3">Công cụ hỗ trợ</h3>
+                <div className="space-y-2">
                   <button
                     onClick={startColorTest}
-                    className="bg-gradient-to-br from-green-400 to-emerald-500 text-white p-4 rounded-xl font-medium flex flex-col items-center gap-2 hover:shadow-lg transition-all active:scale-95"
+                    className="w-full bg-sky-500 hover:bg-sky-400 text-white py-2.5 px-4 rounded text-sm font-medium transition-all text-left"
                   >
-                    <span className="text-2xl">🧪</span>
-                    <span className="text-xs">Test mu mau</span>
+                    Test mù màu Ishihara
                   </button>
                   <button
                     onClick={() => setShowGallery(true)}
-                    className="bg-gradient-to-br from-purple-400 to-pink-500 text-white p-4 rounded-xl font-medium flex flex-col items-center gap-2 hover:shadow-lg transition-all active:scale-95"
+                    className="w-full bg-sky-100 hover:bg-sky-200 text-sky-600 py-2.5 px-4 rounded text-sm font-medium transition-all text-left"
                   >
-                    <span className="text-2xl">🖼️</span>
-                    <span className="text-xs">Bo suu tap ({gallery.length})</span>
+                    Bộ sưu tập ảnh ({gallery.length})
                   </button>
-                </div>
-              </div>
-
-              {/* Share */}
-              <div className="bg-white rounded-2xl shadow-lg p-4 mt-3">
-                <h3 className="text-sm font-bold text-gray-800 mb-3">Chia se</h3>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      const url = `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent('Thu kinh tai VISTA EYE!')}`;
-                      window.open(url, '_blank', 'width=600,height=400');
-                    }}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                    </svg>
-                    Facebook
-                  </button>
-                <button
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({ title: 'VISTA EYE', text: 'Thu kinh ao!', url: window.location.href });
-                    } else {
-                      navigator.clipboard.writeText(window.location.href);
-                    }
-                  }}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                  Chia se
-                </button>
                 </div>
               </div>
             </div>
@@ -1134,15 +1098,15 @@ export default function CameraView() {
 
       {/* COLOR BLIND TEST MODAL */}
       {showColorTest && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl">
+        <div className="fixed inset-0 bg-sky-600/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-5 shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <span>🧪</span> Test Mu Mau Ishihara
+              <h2 className="text-lg font-semibold text-sky-700">
+                Test Mù Màu Ishihara
               </h2>
               <button
                 onClick={() => setShowColorTest(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-sky-400 hover:text-sky-600 text-2xl"
               >
                 x
               </button>
@@ -1151,8 +1115,8 @@ export default function CameraView() {
             {!colorTestResult ? (
               <div>
                 <div className="text-center mb-4">
-                  <p className="text-sm text-gray-600 mb-2">
-                    Cau hoi {colorTestIndex + 1} / {ishiharaPlates.length}
+                  <p className="text-sm text-sky-600 mb-2">
+                    Câu hỏi {colorTestIndex + 1} / {ishiharaPlates.length}
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
@@ -1198,8 +1162,8 @@ export default function CameraView() {
                   </span>
                 </div>
 
-                <p className="text-center text-gray-700 mb-4 font-medium">
-                  Ban nhin thay so nao?
+                <p className="text-center text-sky-600 mb-4 font-medium">
+                  Bạn nhìn thấy số nào?
                 </p>
 
                 <div className="grid grid-cols-3 gap-2">
@@ -1207,40 +1171,40 @@ export default function CameraView() {
                     <button
                       key={idx}
                       onClick={() => submitColorTestAnswer(num)}
-                      className="py-3 bg-gray-100 hover:bg-blue-500 hover:text-white rounded-xl font-bold text-lg transition-all"
+                      className="py-3 bg-sky-100 hover:bg-sky-600 hover:text-white rounded-lg font-bold text-lg transition-all"
                     >
-                      {num === '?' ? 'Khong thay' : num}
+                      {num === '?' ? 'Không thấy' : num}
                     </button>
                   ))}
                 </div>
               </div>
             ) : (
               <div className="text-center">
-                <div className={`text-6xl mb-4 ${colorTestResult.percentage >= 75 ? '' : ''}`}>
-                  {colorTestResult.percentage >= 75 ? '🎉' : colorTestResult.percentage >= 50 ? '😐' : '⚠️'}
+                <div className={`text-5xl mb-4 ${colorTestResult.percentage >= 75 ? '' : ''}`}>
+                  {colorTestResult.percentage >= 75 ? 'O' : colorTestResult.percentage >= 50 ? '-' : '!'}
                 </div>
-                <h3 className="text-2xl font-bold mb-2">Ket qua</h3>
-                <p className="text-4xl font-bold text-blue-600 mb-2">
+                <h3 className="text-xl font-semibold mb-2 text-sky-700">Kết quả</h3>
+                <p className="text-3xl font-bold text-sky-600 mb-2">
                   {colorTestResult.correct} / {colorTestResult.total}
                 </p>
-                <p className="text-gray-600 mb-4">{colorTestResult.percentage.toFixed(0)}% chinh xac</p>
-                <div className={`p-4 rounded-xl mb-4 ${
+                <p className="text-sky-600 mb-4">{colorTestResult.percentage.toFixed(0)}% chính xác</p>
+                <div className={`p-4 rounded-lg mb-4 ${
                   colorTestResult.percentage >= 75 
-                    ? 'bg-green-100 text-green-800' 
+                    ? 'bg-sky-100 text-sky-700' 
                     : colorTestResult.percentage >= 50 
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-red-100 text-red-800'
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-rose-100 text-rose-700'
                 }`}>
-                  <p className="font-semibold">{colorTestResult.diagnosis}</p>
+                  <p className="font-medium">{colorTestResult.diagnosis}</p>
                 </div>
                 <button
                   onClick={() => {
                     setShowColorTest(false);
                     setColorTestResult(null);
                   }}
-                  className="bg-blue-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-600 transition-all"
+                  className="bg-sky-500 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-sky-400 transition-all"
                 >
-                  Dong
+                  Đóng
                 </button>
               </div>
             )}
@@ -1250,63 +1214,62 @@ export default function CameraView() {
 
       {/* GALLERY MODAL */}
       {showGallery && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="p-6 border-b flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <span>🖼️</span> Bo suu tap cua ban
+        <div className="fixed inset-0 bg-sky-600/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-xl">
+            <div className="p-5 border-b border-sky-100 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-sky-700">
+                Bộ sưu tập của bạn
               </h2>
               <button
                 onClick={() => setShowGallery(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-sky-400 hover:text-sky-600 text-2xl"
               >
                 x
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto max-h-[70vh]">
+            <div className="p-5 overflow-y-auto max-h-[70vh]">
               {gallery.length === 0 ? (
                 <div className="text-center py-12">
-                  <span className="text-6xl mb-4 block">📷</span>
-                  <p className="text-gray-500">Chua co anh nao trong bo suu tap</p>
-                  <p className="text-sm text-gray-400 mt-2">Chup anh de bat dau suu tap!</p>
+                  <p className="text-sky-600 mb-2">Chưa có ảnh nào trong bộ sưu tập</p>
+                  <p className="text-sm text-sky-400">Chụp ảnh để bắt đầu sưu tập!</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {gallery.map((item) => (
-                    <div key={item.id} className="group relative rounded-xl overflow-hidden shadow-lg">
+                    <div key={item.id} className="group relative rounded-lg overflow-hidden shadow border border-sky-200">
                       <img 
                         src={item.image} 
                         alt={item.glassName}
                         className="w-full h-40 object-cover"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-all flex flex-col justify-end p-3">
-                        <p className="text-white font-semibold text-sm">{item.glassName}</p>
+                      <div className="absolute inset-0 bg-gradient-to-t from-sky-600/80 to-transparent opacity-0 group-hover:opacity-100 transition-all flex flex-col justify-end p-3">
+                        <p className="text-white font-medium text-sm">{item.glassName}</p>
                         <p className="text-white/70 text-xs">{item.timestamp}</p>
                         <div className="flex gap-2 mt-2">
                           <a
                             href={item.image}
-                            download={`SeeBeyond_${item.id}.jpg`}
+                            download={`VistaEye_${item.id}.jpg`}
                             className="bg-white/20 hover:bg-white/30 text-white px-2 py-1 rounded text-xs"
                           >
-                            Tai xuong
+                            Tải xuống
                           </a>
                           <button
                             onClick={() => {
                               if (navigator.share) {
                                 navigator.share({
-                                  title: 'SeeBeyond Photo',
-                                  text: `Thu kinh ${item.glassName} tai SeeBeyond!`,
+                                  title: 'VISTA EYE',
+                                  text: `Thử kính ${item.glassName} tại VISTA EYE!`,
                                   url: item.image,
                                 });
                               } else {
                                 navigator.clipboard.writeText(item.image);
-                                alert('Da copy link anh!');
+                                alert('Đã copy link ảnh!');
                               }
                             }}
                             className="bg-white/20 hover:bg-white/30 text-white px-2 py-1 rounded text-xs"
                           >
-                            Chia se
+                            Chia sẻ
                           </button>
                         </div>
                       </div>
@@ -1317,17 +1280,17 @@ export default function CameraView() {
             </div>
 
             {gallery.length > 0 && (
-              <div className="p-4 border-t bg-gray-50 flex justify-between items-center">
-                <p className="text-sm text-gray-600">{gallery.length} anh trong bo suu tap</p>
+              <div className="p-4 border-t border-sky-200 bg-sky-50 flex justify-between items-center">
+                <p className="text-sm text-sky-600">{gallery.length} ảnh trong bộ sưu tập</p>
                 <button
                   onClick={() => {
-                    if (window.confirm('Ban co chac muon xoa tat ca anh?')) {
+                    if (window.confirm('Bạn có chắc muốn xóa tất cả ảnh?')) {
                       setGallery([]);
                     }
                   }}
-                  className="text-red-500 hover:text-red-700 text-sm font-semibold"
+                  className="text-rose-500 hover:text-rose-700 text-sm font-medium"
                 >
-                  Xoa tat ca
+                  Xóa tất cả
                 </button>
               </div>
             )}
