@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Webcam from "react-webcam";
 import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision";
-import { uploadToCloudinary } from "../utils/cloudinary";
+
 
 // KINH NGHIEM TUC (Professional)
 const glassesList = [
@@ -87,16 +87,12 @@ export default function CameraView() {
   const [faceLandmarker, setFaceLandmarker] = useState(null);
   const [filter, setFilter] = useState("none");
   const [glassIndex, setGlassIndex] = useState(0);
-  const [imageUrl, setImageUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [autoMode, setAutoMode] = useState(true);
   const [faceAnalysis, setFaceAnalysis] = useState(null);
-  const [recommendedGlass, setRecommendedGlass] = useState(null);
 
   // CHẾ ĐỘ NHIỀU NGƯỜI (Tự động kích hoạt khi có >1 người)
-  const [personGlasses, setPersonGlasses] = useState({}); // {faceIndex: glassIndex}
   const [detectedFaces, setDetectedFaces] = useState(0);
-  const [selectedPerson, setSelectedPerson] = useState(null);
   const multiPersonMode = detectedFaces > 1; // Tự động bật khi có nhiều người
   
   // HIỆU ỨNG CHỤP ẢNH
@@ -110,7 +106,6 @@ export default function CameraView() {
   // FACE TRACKING - GIỮ ID ỔN ĐỊNH CHO MỖI KHUÔN MẶT
   const faceTrackerRef = useRef([]);
   const nextFaceIdRef = useRef(0);
-  const [trackedFaces, setTrackedFaces] = useState([]); // State để trigger re-render UI
 
   // TINH NANG MOI: BAT/TAT MAT KINH
   const [glassesEnabled, setGlassesEnabled] = useState(false);
@@ -437,10 +432,8 @@ export default function CameraView() {
         });
 
         faceTrackerRef.current = newTracker;
-        setTrackedFaces([...newTracker]); // Cập nhật state để UI re-render
       } else {
         faceTrackerRef.current = [];
-        setTrackedFaces([]);
       }
 
       if (results.faceLandmarks?.length > 0 && imagesLoaded) {
@@ -457,7 +450,6 @@ export default function CameraView() {
             );
             if (recommendedIndex !== -1 && recommendedIndex !== glassIndex) {
               setGlassIndex(recommendedIndex);
-              setRecommendedGlass(analysis.recommendedGlass);
             }
           }
         }
@@ -482,13 +474,8 @@ export default function CameraView() {
           // Lấy stable ID từ face tracker
           const stableFaceId = faceTrackerRef.current[faceIndex]?.id ?? faceIndex;
 
-          // Lấy mắt kính cho người này (dùng stable ID)
-          let currentGlassIndex = glassIndex;
-          if (multiPersonMode && personGlasses[stableFaceId] !== undefined) {
-            currentGlassIndex = personGlasses[stableFaceId];
-          }
-
-          const currentGlass = glassesList[currentGlassIndex];
+          // Su dung glass index hien tai
+          const currentGlass = glassesList[glassIndex];
           const scaleMultiplier = currentGlass.scaleMultiplier || 1.6;
 
           // Tự động điều chỉnh kích thước
@@ -519,10 +506,7 @@ export default function CameraView() {
             const displayNumber = stableFaceId + 1; // Hiển thị ID ổn định
 
             ctx.save();
-            ctx.fillStyle =
-              selectedPerson === stableFaceId
-                ? "rgba(34, 197, 94, 0.9)"
-                : "rgba(59, 130, 246, 0.9)";
+            ctx.fillStyle = "rgba(59, 130, 246, 0.9)";
             ctx.strokeStyle = "white";
             ctx.lineWidth = 3;
             ctx.font = "bold 24px Arial";
@@ -721,8 +705,6 @@ export default function CameraView() {
     autoMode,
     analyzeFaceAndRecommend,
     multiPersonMode,
-    personGlasses,
-    selectedPerson,
     imagesLoaded,
     glassesEnabled,
     visionSettings,
@@ -743,14 +725,6 @@ export default function CameraView() {
     setLoading(true);
     
     try {
-      let uploadedUrl;
-      if (process.env.REACT_APP_USE_CLOUDINARY === "true") {
-        uploadedUrl = await uploadToCloudinary(imageSrc);
-      } else {
-        uploadedUrl = imageSrc;
-      }
-      setImageUrl(uploadedUrl);
-      
       // TỰ ĐỘNG DOWNLOAD ẢNH
       const link = document.createElement('a');
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
