@@ -758,7 +758,7 @@ export default function CameraView() {
         {/* CAMERA SECTION */}
         <div className="w-full lg:flex-1">
           {/* Camera Container */}
-          <div className="relative rounded-lg overflow-hidden shadow-lg bg-sky-600 border border-sky-100">
+          <div className="relative rounded-lg overflow-hidden shadow-lg bg-black border border-gray-200">
             {/* Aspect ratio container */}
             <div className="relative w-full aspect-[4/3]">
               <Webcam
@@ -784,12 +784,12 @@ export default function CameraView() {
               {/* Top Bar - Info badges */}
               <div className="absolute top-0 left-0 right-0 p-2 md:p-3 flex justify-between items-start">
                 {faceAnalysis && !multiPersonMode && (
-                  <div className="bg-sky-500/80 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 rounded font-medium">
+                  <div className="bg-black/60 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 rounded font-medium">
                     {faceAnalysis.faceShape}
                   </div>
                 )}
                 {detectedFaces > 0 && (
-                  <div className="bg-sky-500/80 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 rounded font-medium ml-auto">
+                  <div className="bg-black/60 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 rounded font-medium ml-auto">
                     Phát hiện: {detectedFaces} khuôn mặt
                   </div>
                 )}
@@ -797,20 +797,20 @@ export default function CameraView() {
 
               {/* Success Toast */}
               {captureSuccess && (
-                <div className="absolute top-12 md:top-14 left-1/2 -translate-x-1/2 bg-sky-600 text-white px-4 py-2 rounded shadow-lg text-xs md:text-sm font-medium">
+                <div className="absolute top-12 md:top-14 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded shadow-lg text-xs md:text-sm font-medium">
                   Đã lưu thành công
                 </div>
               )}
 
               {/* Empathy Timer Overlay */}
               {empathyMode && (
-                <div className="absolute inset-0 flex items-center justify-center bg-sky-600/50">
-                  <div className="bg-white text-sky-700 px-6 py-5 rounded-lg shadow-xl text-center">
-                    <p className="text-xs text-sky-500 mb-2 uppercase tracking-wider">Thời gian trải nghiệm</p>
-                    <p className="text-3xl font-mono font-bold text-sky-600">{formatTime(empathyTimer)}</p>
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                  <div className="bg-white text-gray-900 px-6 py-5 rounded-lg shadow-xl text-center">
+                    <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Thời gian trải nghiệm</p>
+                    <p className="text-3xl font-mono font-bold text-gray-900">{formatTime(empathyTimer)}</p>
                     <button
                       onClick={stopEmpathyMode}
-                      className="mt-4 bg-sky-500 hover:bg-sky-400 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
+                      className="mt-4 bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
                     >
                       Kết thúc
                     </button>
@@ -819,7 +819,7 @@ export default function CameraView() {
               )}
 
               {/* Bottom Action Bar */}
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-sky-600/90 to-transparent">
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
                 <div className="flex items-center justify-center gap-4">
                   {/* Gallery Button */}
                   <button
@@ -834,13 +834,13 @@ export default function CameraView() {
                   <button
                     onClick={capture}
                     disabled={loading}
-                    className="w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-sky-50 active:scale-95 transition-all disabled:opacity-50"
+                    className="w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-50"
                     title="Chụp ảnh"
                   >
                     {loading ? (
-                      <div className="w-5 h-5 border-2 border-sky-300 border-t-sky-600 rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-800 rounded-full animate-spin" />
                     ) : (
-                      <div className="w-10 h-10 bg-sky-600 rounded-full" />
+                      <div className="w-10 h-10 bg-white rounded-full border-2 border-gray-200" />
                     )}
                   </button>
                   
@@ -848,7 +848,7 @@ export default function CameraView() {
                   <button
                     onClick={() => setGlassesEnabled(!glassesEnabled)}
                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                      glassesEnabled ? 'bg-sky-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'
+                      glassesEnabled ? 'bg-white/30 text-white ring-2 ring-white/70' : 'bg-white/10 text-white hover:bg-white/20'
                     }`}
                     title={glassesEnabled ? 'Tắt kính' : 'Bật kính'}
                   >
