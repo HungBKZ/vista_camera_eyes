@@ -110,6 +110,9 @@ export default function CameraView() {
   // TINH NANG MOI: BAT/TAT MAT KINH
   const [glassesEnabled, setGlassesEnabled] = useState(false);
 
+  // TINH NANG MOI: DO KHOANG CACH DUA TREN DIEN TICH KHUON MAT
+  const [faceDistance, setFaceDistance] = useState(0.5); // 0 = rat gan, 1 = rat xa
+
   // TINH NANG MOI: DIEU CHINH DO KHUC XA (Dioptri)
   const [visionSettings, setVisionSettings] = useState({
     myopia: 0,        // Can thi (-0.25 den -10.00)
@@ -138,7 +141,7 @@ export default function CameraView() {
 
 
   // Hàm phân tích khuôn mặt và gợi ý mắt kính
-  const analyzeFaceAndRecommend = useCallback((faceLandmarks) => {
+  const analyzeFaceAndRecommend = useCallback((faceLandmarks, canvasWidth, canvasHeight) => {
     if (!faceLandmarks || faceLandmarks.length === 0) return null;
 
     const face = faceLandmarks[0];
@@ -159,6 +162,21 @@ export default function CameraView() {
 
     // Tính chiều rộng khuôn mặt (từ má trái sang má phải)
     const faceWidth = Math.abs(rightCheek.x - leftCheek.x);
+
+    // ===== TÍNH DIỆN TÍCH KHUÔN MẶT ĐỂ ƯỚC LƯỢNG KHOẢNG CÁCH =====
+    // Diện tích = faceWidth * faceHeight (normalized 0-1)
+    const normalizedFaceArea = faceWidth * faceHeight;
+    
+    // Quy đổi diện tích thành khoảng cách ước lượng
+    // Diện tích lớn (>0.15) = gần, diện tích nhỏ (<0.03) = xa
+    // faceDistance: 0 = rất gần, 1 = rất xa
+    const minArea = 0.02;  // Khuôn mặt rất xa
+    const maxArea = 0.20;  // Khuôn mặt rất gần
+    const clampedArea = Math.max(minArea, Math.min(maxArea, normalizedFaceArea));
+    const estimatedDistance = 1 - ((clampedArea - minArea) / (maxArea - minArea));
+    
+    // Cập nhật state
+    setFaceDistance(estimatedDistance);
 
     // Tỷ lệ khuôn mặt
     const faceRatio = faceWidth / faceHeight;
@@ -192,6 +210,8 @@ export default function CameraView() {
       faceHeight,
       faceRatio,
       faceShape,
+      normalizedFaceArea,
+      estimatedDistance,
       recommendedGlass: recommended,
     };
   }, []);
@@ -390,8 +410,8 @@ export default function CameraView() {
       }
 
       if (results.faceLandmarks?.length > 0 && imagesLoaded) {
-        // Phân tích khuôn mặt đầu tiên
-        const analysis = analyzeFaceAndRecommend(results.faceLandmarks);
+        // Phân tích khuôn mặt đầu tiên (truyền canvas size để tính diện tích)
+        const analysis = analyzeFaceAndRecommend(results.faceLandmarks, canvas.width, canvas.height);
 
         if (analysis) {
           setFaceAnalysis(analysis);
@@ -561,59 +581,70 @@ export default function CameraView() {
         }
         ctx.putImageData(imageData, 0, 0);
       } else if (filter === "nearsighted") {
-        // Cận thị - mờ toàn bộ (iOS compatible - manual box blur)
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        const w = canvas.width;
-        const h = canvas.height;
-        const radius = 8;
+        // CẬN THỊ - ĐỘNG THEO KHOẢNG CÁCH
+        // Cận thị: nhìn gần RÕ, nhìn xa MỜ
+        // faceDistance: 0 = gần (rõ), 1 = xa (mờ)
+        const blurIntensity = faceDistance; // Càng xa càng mờ
         
-        // Simple box blur algorithm (iOS compatible)
-        const tempData = new Uint8ClampedArray(data);
-        for (let y = radius; y < h - radius; y++) {
-          for (let x = radius; x < w - radius; x++) {
-            let r = 0, g = 0, b = 0, count = 0;
-            for (let dy = -radius; dy <= radius; dy += 2) {
-              for (let dx = -radius; dx <= radius; dx += 2) {
-                const idx = ((y + dy) * w + (x + dx)) * 4;
-                r += tempData[idx];
-                g += tempData[idx + 1];
-                b += tempData[idx + 2];
-                count++;
+        if (blurIntensity > 0.1) {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          const w = canvas.width;
+          const h = canvas.height;
+          // Radius động từ 2 đến 12 dựa trên khoảng cách
+          const radius = Math.max(2, Math.round(blurIntensity * 12));
+          
+          // Simple box blur algorithm (iOS compatible)
+          const tempData = new Uint8ClampedArray(data);
+          const step = Math.max(1, Math.floor(radius / 4)); // Tối ưu performance
+          
+          for (let y = radius; y < h - radius; y += 2) {
+            for (let x = radius; x < w - radius; x += 2) {
+              let r = 0, g = 0, b = 0, count = 0;
+              for (let dy = -radius; dy <= radius; dy += step) {
+                for (let dx = -radius; dx <= radius; dx += step) {
+                  const idx = ((y + dy) * w + (x + dx)) * 4;
+                  r += tempData[idx];
+                  g += tempData[idx + 1];
+                  b += tempData[idx + 2];
+                  count++;
+                }
+              }
+              // Apply blur to 2x2 block
+              for (let py = 0; py < 2 && y + py < h; py++) {
+                for (let px = 0; px < 2 && x + px < w; px++) {
+                  const idx = ((y + py) * w + (x + px)) * 4;
+                  data[idx] = r / count;
+                  data[idx + 1] = g / count;
+                  data[idx + 2] = b / count;
+                }
               }
             }
-            const idx = (y * w + x) * 4;
-            data[idx] = r / count;
-            data[idx + 1] = g / count;
-            data[idx + 2] = b / count;
           }
+          ctx.putImageData(imageData, 0, 0);
         }
-        ctx.putImageData(imageData, 0, 0);
+        // Nếu blurIntensity <= 0.1 (rất gần) thì hình ảnh rõ nét
       } else if (filter === "farsighted") {
-        // Viễn thị - mờ ở trung tâm, rõ ở viền (iOS compatible)
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
+        // VIỄN THỊ - ĐỘNG THEO KHOẢNG CÁCH
+        // Viễn thị: nhìn xa RÕ, nhìn gần MỜ
+        // faceDistance: 0 = gần (mờ), 1 = xa (rõ)
+        const blurIntensity = 1 - faceDistance; // Càng gần càng mờ
         
-        // Manual blur for center area
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        const w = canvas.width;
-        const h = canvas.height;
-        const tempData = new Uint8ClampedArray(data);
-        const blurRadius = 10;
-        
-        for (let y = blurRadius; y < h - blurRadius; y += 2) {
-          for (let x = blurRadius; x < w - blurRadius; x += 2) {
-            // Calculate distance from center
-            const distFromCenter = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-            const blurStrength = Math.max(0, 1 - (distFromCenter / (maxRadius * 0.6)));
-            
-            if (blurStrength > 0.2) {
+        if (blurIntensity > 0.1) {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          const w = canvas.width;
+          const h = canvas.height;
+          const tempData = new Uint8ClampedArray(data);
+          // Radius động từ 2 đến 14 dựa trên độ gần
+          const blurRadius = Math.max(2, Math.round(blurIntensity * 14));
+          const step = Math.max(2, Math.floor(blurRadius / 3));
+          
+          for (let y = blurRadius; y < h - blurRadius; y += 2) {
+            for (let x = blurRadius; x < w - blurRadius; x += 2) {
               let r = 0, g = 0, b = 0, count = 0;
-              const actualRadius = Math.round(blurRadius * blurStrength);
-              for (let dy = -actualRadius; dy <= actualRadius; dy += 3) {
-                for (let dx = -actualRadius; dx <= actualRadius; dx += 3) {
+              for (let dy = -blurRadius; dy <= blurRadius; dy += step) {
+                for (let dx = -blurRadius; dx <= blurRadius; dx += step) {
                   const idx = ((y + dy) * w + (x + dx)) * 4;
                   r += tempData[idx];
                   g += tempData[idx + 1];
@@ -631,8 +662,9 @@ export default function CameraView() {
               }
             }
           }
+          ctx.putImageData(imageData, 0, 0);
         }
-        ctx.putImageData(imageData, 0, 0);
+        // Nếu blurIntensity <= 0.1 (rất xa) thì hình ảnh rõ nét
       } else if (filter === "lightsensitive") {
         // Nhạy sáng - tăng độ sáng và giảm độ tương phản
         ctx.fillStyle = "rgba(255,255,255,0.4)";
@@ -761,6 +793,7 @@ export default function CameraView() {
     imagesLoaded,
     glassesEnabled,
     visionSettings,
+    faceDistance,
   ]);
 
   const capture = async () => {
@@ -847,6 +880,41 @@ export default function CameraView() {
                   </div>
                 )}
               </div>
+
+              {/* Distance Indicator - Hiển thị khi dùng filter cận/viễn thị */}
+              {(filter === "nearsighted" || filter === "farsighted") && detectedFaces > 0 && (
+                <div className="absolute top-10 left-0 right-0 flex justify-center">
+                  <div className="bg-black/70 text-white px-3 py-2 rounded-lg text-xs flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <span>📏</span>
+                      <span>Khoảng cách:</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {/* Distance bar */}
+                      <div className="w-20 h-2 bg-white/30 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-300 ${
+                            filter === "nearsighted" 
+                              ? (faceDistance > 0.6 ? 'bg-red-400' : faceDistance > 0.3 ? 'bg-yellow-400' : 'bg-green-400')
+                              : (faceDistance < 0.4 ? 'bg-red-400' : faceDistance < 0.7 ? 'bg-yellow-400' : 'bg-green-400')
+                          }`}
+                          style={{ width: `${(1 - faceDistance) * 100}%` }}
+                        />
+                      </div>
+                      <span className="font-medium w-8">
+                        {faceDistance < 0.3 ? 'Gần' : faceDistance < 0.7 ? 'TB' : 'Xa'}
+                      </span>
+                    </div>
+                    {/* Blur indicator */}
+                    <div className="text-[10px] text-white/70 ml-1">
+                      {filter === "nearsighted" 
+                        ? `Mờ: ${Math.round(faceDistance * 100)}%`
+                        : `Mờ: ${Math.round((1 - faceDistance) * 100)}%`
+                      }
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Success Toast */}
               {captureSuccess && (
