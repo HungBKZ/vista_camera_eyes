@@ -119,12 +119,6 @@ export default function CameraView() {
   });
   const [showVisionPanel, setShowVisionPanel] = useState(false);
 
-  // TINH NANG MOI: EMPATHY MODE
-  const [empathyMode, setEmpathyMode] = useState(false);
-  const [empathyTimer, setEmpathyTimer] = useState(0);
-  const [empathyCondition, setEmpathyCondition] = useState(null);
-  const empathyTimerRef = useRef(null);
-
   // TINH NANG MOI: TAB NAVIGATION (for mobile)
   const [activeTab, setActiveTab] = useState('effects'); // effects, glasses, tools
 
@@ -230,47 +224,6 @@ export default function CameraView() {
 
     loadImages();
   }, []);
-
-  // EMPATHY MODE TIMER
-  useEffect(() => {
-    if (empathyMode && empathyCondition) {
-      empathyTimerRef.current = setInterval(() => {
-        setEmpathyTimer(prev => prev + 1);
-      }, 1000);
-    } else {
-      if (empathyTimerRef.current) {
-        clearInterval(empathyTimerRef.current);
-      }
-      setEmpathyTimer(0);
-    }
-    return () => {
-      if (empathyTimerRef.current) {
-        clearInterval(empathyTimerRef.current);
-      }
-    };
-  }, [empathyMode, empathyCondition]);
-
-  // START EMPATHY MODE
-  const startEmpathyMode = (condition) => {
-    setEmpathyMode(true);
-    setEmpathyCondition(condition);
-    setFilter(condition);
-    setEmpathyTimer(0);
-  };
-
-  // STOP EMPATHY MODE
-  const stopEmpathyMode = () => {
-    setEmpathyMode(false);
-    setEmpathyCondition(null);
-    setFilter("none");
-  };
-
-  // FORMAT TIME
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // COLOR BLIND TEST FUNCTIONS
   const generateOptions = (index) => {
