@@ -529,7 +529,7 @@ export default function CameraView() {
         } // end if glassesEnabled
       }
 
-      // HIEU UNG MO PHONG DO KHUC XA (Dioptri) - Ap dung truoc filter
+      // HIEU UNG MO PHONG DO KHUC XA (Dioptri) - iOS compatible manual blur
       const applyVisionBlur = () => {
         const { myopia, hyperopia, astigmatism } = visionSettings;
         
@@ -552,25 +552,38 @@ export default function CameraView() {
         }
         
         if (blurAmount > 0) {
-          ctx.filter = `blur(${Math.min(blurAmount, 20)}px)`;
-          ctx.drawImage(canvas, 0, 0);
-          ctx.filter = "none";
+          // iOS compatible: manual box blur
+          const radius = Math.min(Math.round(blurAmount), 15);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          const w = canvas.width;
+          const h = canvas.height;
+          const tempData = new Uint8ClampedArray(data);
           
-          // Them hieu ung loan thi (directional blur)
-          if (astigmatism < 0) {
-            const axis = visionSettings.axis;
-            ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.rotate((axis * Math.PI) / 180);
-            ctx.scale(1, 1 + Math.abs(astigmatism) * 0.05);
-            ctx.translate(-canvas.width / 2, -canvas.height / 2);
-            ctx.globalAlpha = 0.3;
-            ctx.filter = `blur(${Math.abs(astigmatism) * 2}px)`;
-            ctx.drawImage(canvas, 0, 0);
-            ctx.restore();
-            ctx.filter = "none";
-            ctx.globalAlpha = 1;
+          for (let y = radius; y < h - radius; y += 2) {
+            for (let x = radius; x < w - radius; x += 2) {
+              let r = 0, g = 0, b = 0, count = 0;
+              for (let dy = -radius; dy <= radius; dy += 3) {
+                for (let dx = -radius; dx <= radius; dx += 3) {
+                  const idx = ((y + dy) * w + (x + dx)) * 4;
+                  r += tempData[idx];
+                  g += tempData[idx + 1];
+                  b += tempData[idx + 2];
+                  count++;
+                }
+              }
+              // Apply to 2x2 block for performance
+              for (let py = 0; py < 2 && y + py < h; py++) {
+                for (let px = 0; px < 2 && x + px < w; px++) {
+                  const idx = ((y + py) * w + (x + px)) * 4;
+                  data[idx] = r / count;
+                  data[idx + 1] = g / count;
+                  data[idx + 2] = b / count;
+                }
+              }
+            }
           }
+          ctx.putImageData(imageData, 0, 0);
         }
       };
       
@@ -595,51 +608,78 @@ export default function CameraView() {
         }
         ctx.putImageData(imageData, 0, 0);
       } else if (filter === "nearsighted") {
-        // Cận thị - mờ toàn bộ
-        ctx.filter = "blur(8px)";
-        ctx.drawImage(canvas, 0, 0);
-        ctx.filter = "none";
+        // Cận thị - mờ toàn bộ (iOS compatible - manual box blur)
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const w = canvas.width;
+        const h = canvas.height;
+        const radius = 8;
+        
+        // Simple box blur algorithm (iOS compatible)
+        const tempData = new Uint8ClampedArray(data);
+        for (let y = radius; y < h - radius; y++) {
+          for (let x = radius; x < w - radius; x++) {
+            let r = 0, g = 0, b = 0, count = 0;
+            for (let dy = -radius; dy <= radius; dy += 2) {
+              for (let dx = -radius; dx <= radius; dx += 2) {
+                const idx = ((y + dy) * w + (x + dx)) * 4;
+                r += tempData[idx];
+                g += tempData[idx + 1];
+                b += tempData[idx + 2];
+                count++;
+              }
+            }
+            const idx = (y * w + x) * 4;
+            data[idx] = r / count;
+            data[idx + 1] = g / count;
+            data[idx + 2] = b / count;
+          }
+        }
+        ctx.putImageData(imageData, 0, 0);
       } else if (filter === "farsighted") {
-        // Viễn thị - mờ ở trung tâm, rõ ở viền
+        // Viễn thị - mờ ở trung tâm, rõ ở viền (iOS compatible)
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
-
-        // Tạo gradient radial blur
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
-        const tempCtx = tempCanvas.getContext("2d");
-        tempCtx.drawImage(canvas, 0, 0);
-
-        // Vẽ lớp blur ở giữa
-        ctx.filter = "blur(10px)";
-        ctx.globalAlpha = 0.8;
-        ctx.drawImage(tempCanvas, 0, 0);
-        ctx.filter = "none";
-        ctx.globalAlpha = 1.0;
-
-        // Tạo gradient mask để viền rõ hơn
-        const gradient = ctx.createRadialGradient(
-          centerX,
-          centerY,
-          0,
-          centerX,
-          centerY,
-          maxRadius * 0.6
-        );
-        gradient.addColorStop(0, "rgba(255,255,255,0)");
-        gradient.addColorStop(1, "rgba(255,255,255,1)");
-
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.globalCompositeOperation = "source-over";
-
-        // Vẽ lại phần viền rõ
-        ctx.globalAlpha = 0.3;
-        ctx.drawImage(tempCanvas, 0, 0);
-        ctx.globalAlpha = 1.0;
+        
+        // Manual blur for center area
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const w = canvas.width;
+        const h = canvas.height;
+        const tempData = new Uint8ClampedArray(data);
+        const blurRadius = 10;
+        
+        for (let y = blurRadius; y < h - blurRadius; y += 2) {
+          for (let x = blurRadius; x < w - blurRadius; x += 2) {
+            // Calculate distance from center
+            const distFromCenter = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+            const blurStrength = Math.max(0, 1 - (distFromCenter / (maxRadius * 0.6)));
+            
+            if (blurStrength > 0.2) {
+              let r = 0, g = 0, b = 0, count = 0;
+              const actualRadius = Math.round(blurRadius * blurStrength);
+              for (let dy = -actualRadius; dy <= actualRadius; dy += 3) {
+                for (let dx = -actualRadius; dx <= actualRadius; dx += 3) {
+                  const idx = ((y + dy) * w + (x + dx)) * 4;
+                  r += tempData[idx];
+                  g += tempData[idx + 1];
+                  b += tempData[idx + 2];
+                  count++;
+                }
+              }
+              for (let py = 0; py < 2 && y + py < h; py++) {
+                for (let px = 0; px < 2 && x + px < w; px++) {
+                  const idx = ((y + py) * w + (x + px)) * 4;
+                  data[idx] = r / count;
+                  data[idx + 1] = g / count;
+                  data[idx + 2] = b / count;
+                }
+              }
+            }
+          }
+        }
+        ctx.putImageData(imageData, 0, 0);
       } else if (filter === "lightsensitive") {
         // Nhạy sáng - tăng độ sáng và giảm độ tương phản
         ctx.fillStyle = "rgba(255,255,255,0.4)";
@@ -649,12 +689,43 @@ export default function CameraView() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.globalCompositeOperation = "source-over";
       } else if (filter === "cataract") {
-        // Đục thủy tinh thể - mờ và vàng
-        ctx.fillStyle = "rgba(255,240,200,0.3)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.filter = "blur(5px) contrast(0.8) brightness(1.2)";
-        ctx.drawImage(canvas, 0, 0);
-        ctx.filter = "none";
+        // Đục thủy tinh thể - mờ và vàng (iOS compatible)
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const w = canvas.width;
+        const h = canvas.height;
+        const tempData = new Uint8ClampedArray(data);
+        const blurRadius = 5;
+        
+        // Apply blur + yellow tint + brightness
+        for (let y = blurRadius; y < h - blurRadius; y += 2) {
+          for (let x = blurRadius; x < w - blurRadius; x += 2) {
+            let r = 0, g = 0, b = 0, count = 0;
+            for (let dy = -blurRadius; dy <= blurRadius; dy += 2) {
+              for (let dx = -blurRadius; dx <= blurRadius; dx += 2) {
+                const idx = ((y + dy) * w + (x + dx)) * 4;
+                r += tempData[idx];
+                g += tempData[idx + 1];
+                b += tempData[idx + 2];
+                count++;
+              }
+            }
+            // Apply to 2x2 block with yellow tint and brightness
+            for (let py = 0; py < 2 && y + py < h; py++) {
+              for (let px = 0; px < 2 && x + px < w; px++) {
+                const idx = ((y + py) * w + (x + px)) * 4;
+                // Blur + brightness(1.2) + contrast(0.8) + yellow tint
+                const avgR = Math.min(255, (r / count) * 1.15 + 30);
+                const avgG = Math.min(255, (g / count) * 1.1 + 20);
+                const avgB = Math.min(255, (b / count) * 0.85);
+                data[idx] = avgR;
+                data[idx + 1] = avgG;
+                data[idx + 2] = avgB;
+              }
+            }
+          }
+        }
+        ctx.putImageData(imageData, 0, 0);
       } else if (filter === "glaucoma") {
         // Tăng nhãn áp - mất thị giác ngoại vi (tunnel vision)
         const centerX = canvas.width / 2;
@@ -677,10 +748,39 @@ export default function CameraView() {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       } else if (filter === "diabetic") {
-        // Bệnh võng mạc tiểu đường - có đốm đen và mờ
-        ctx.filter = "blur(2px) contrast(0.9)";
-        ctx.drawImage(canvas, 0, 0);
-        ctx.filter = "none";
+        // Bệnh võng mạc tiểu đường - có đốm đen và mờ (iOS compatible)
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const w = canvas.width;
+        const h = canvas.height;
+        const tempData = new Uint8ClampedArray(data);
+        const blurRadius = 2;
+        
+        // Light blur + contrast reduction
+        for (let y = blurRadius; y < h - blurRadius; y += 2) {
+          for (let x = blurRadius; x < w - blurRadius; x += 2) {
+            let r = 0, g = 0, b = 0, count = 0;
+            for (let dy = -blurRadius; dy <= blurRadius; dy++) {
+              for (let dx = -blurRadius; dx <= blurRadius; dx++) {
+                const idx = ((y + dy) * w + (x + dx)) * 4;
+                r += tempData[idx];
+                g += tempData[idx + 1];
+                b += tempData[idx + 2];
+                count++;
+              }
+            }
+            for (let py = 0; py < 2 && y + py < h; py++) {
+              for (let px = 0; px < 2 && x + px < w; px++) {
+                const idx = ((y + py) * w + (x + px)) * 4;
+                // Apply blur with slight contrast reduction (0.9)
+                data[idx] = ((r / count) - 128) * 0.9 + 128;
+                data[idx + 1] = ((g / count) - 128) * 0.9 + 128;
+                data[idx + 2] = ((b / count) - 128) * 0.9 + 128;
+              }
+            }
+          }
+        }
+        ctx.putImageData(imageData, 0, 0);
 
         // Thêm các đốm đen ngẫu nhiên
         ctx.fillStyle = "rgba(0,0,0,0.7)";
@@ -753,14 +853,14 @@ export default function CameraView() {
   return (
     <div className="flex flex-col w-full min-h-screen bg-sky-50">
       {/* MAIN LAYOUT - Responsive */}
-      <div className="flex flex-col lg:flex-row gap-5 w-full p-3 md:p-5 lg:p-6 max-w-[1280px] mx-auto">
+      <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-5 w-full p-2 sm:p-3 md:p-5 lg:p-6 max-w-[1280px] mx-auto">
         
         {/* CAMERA SECTION */}
         <div className="w-full lg:flex-1">
           {/* Camera Container */}
-          <div className="relative rounded-lg overflow-hidden shadow-lg bg-black border border-gray-200">
-            {/* Aspect ratio container */}
-            <div className="relative w-full aspect-[4/3]">
+          <div className="relative rounded-xl overflow-hidden shadow-lg bg-black border border-gray-200">
+            {/* Aspect ratio container - portrait on mobile, landscape on desktop */}
+            <div className="relative w-full aspect-[3/4] sm:aspect-[4/3]">
               <Webcam
                 ref={webcamRef}
                 mirrored={false}
@@ -802,21 +902,7 @@ export default function CameraView() {
                 </div>
               )}
 
-              {/* Empathy Timer Overlay */}
-              {empathyMode && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                  <div className="bg-white text-gray-900 px-6 py-5 rounded-lg shadow-xl text-center">
-                    <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Thời gian trải nghiệm</p>
-                    <p className="text-3xl font-mono font-bold text-gray-900">{formatTime(empathyTimer)}</p>
-                    <button
-                      onClick={stopEmpathyMode}
-                      className="mt-4 bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
-                    >
-                      Kết thúc
-                    </button>
-                  </div>
-                </div>
-              )}
+
 
               {/* Bottom Action Bar */}
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
@@ -864,10 +950,10 @@ export default function CameraView() {
         </div>
 
         {/* CONTROL PANEL */}
-        <div className="w-full lg:w-[320px] flex-shrink-0 space-y-4">
+        <div className="w-full lg:w-[320px] flex-shrink-0 space-y-3 sm:space-y-4">
           
-          {/* INTRO CARD */}
-          <div className="bg-sky-500 rounded-lg p-4 text-white">
+          {/* INTRO CARD - Hidden on mobile to save space */}
+          <div className="hidden sm:block bg-sky-500 rounded-xl p-4 text-white">
             <h2 className="text-sm md:text-base font-semibold mb-1">Mô phỏng tật khuyết mắt</h2>
             <p className="text-xs text-sky-100 leading-relaxed">
               Trải nghiệm góc nhìn của người có các vấn đề về thị lực để hiểu hơn về bệnh lý mắt.
@@ -875,37 +961,38 @@ export default function CameraView() {
           </div>
 
           {/* TAB NAVIGATION */}
-          <div className="bg-white rounded-lg shadow border border-sky-200 p-1 flex">
+          <div className="bg-white rounded-xl shadow border border-sky-200 p-1 flex sticky top-2 z-10">
             {[
-              { id: 'effects', label: 'Thị giác' },
-              { id: 'glasses', label: 'Thử kính' },
-              { id: 'tools', label: 'Công cụ' },
+              { id: 'effects', label: 'Thị giác', icon: '👁️' },
+              { id: 'glasses', label: 'Thử kính', icon: '👓' },
+              { id: 'tools', label: 'Công cụ', icon: '🔧' },
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-2 rounded text-sm font-medium transition-all ${
+                className={`flex-1 py-2.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1 ${
                   activeTab === tab.id 
-                    ? 'bg-sky-500 text-white' 
+                    ? 'bg-sky-500 text-white shadow-sm' 
                     : 'text-sky-600 hover:text-sky-700 hover:bg-sky-50'
                 }`}
               >
-                {tab.label}
+                <span className="sm:hidden">{tab.icon}</span>
+                <span>{tab.label}</span>
               </button>
             ))}
           </div>
 
           {/* CONTENT PANELS */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4 touch-scroll">
             
             {/* GLASSES TAB CONTENT */}
             <div className={`${activeTab === 'glasses' ? 'block' : 'hidden'}`}>
               {/* Toggle glasses */}
-              <div className="bg-white rounded-lg shadow border border-sky-200 p-4 mb-3">
+              <div className="bg-white rounded-xl shadow border border-sky-200 p-3 sm:p-4 mb-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-medium text-sky-700">Hiển thị mắt kính</h3>
-                    <p className="text-xs text-sky-600">Bật để thử kính trên khuôn mặt</p>
+                    <p className="text-xs text-sky-500">Bật để thử kính trên khuôn mặt</p>
                   </div>
                   <button
                     onClick={() => setGlassesEnabled(!glassesEnabled)}
@@ -921,27 +1008,27 @@ export default function CameraView() {
               </div>
 
               {/* Glasses Grid */}
-              <div className={`bg-white rounded-lg shadow border border-sky-200 p-4 transition-opacity ${glassesEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+              <div className={`bg-white rounded-xl shadow border border-sky-200 p-3 sm:p-4 transition-opacity ${glassesEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-medium text-sky-700">Chọn kiểu kính</h3>
                   <button
                     onClick={() => setAutoMode(!autoMode)}
-                    className={`text-xs px-2 py-1 rounded font-medium transition-all ${
+                    className={`text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                       autoMode ? 'bg-sky-100 text-sky-600' : 'bg-sky-50 text-sky-400'
                     }`}
                   >
                     {autoMode ? 'Tự động' : 'Thủ công'}
                   </button>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {glassesList.map((g, idx) => (
                     <button
                       key={g.id}
                       onClick={() => { setGlassIndex(idx); setAutoMode(false); }}
-                      className={`aspect-square p-1.5 rounded border-2 transition-all ${
+                      className={`aspect-square p-1.5 sm:p-2 rounded-lg border-2 transition-all active:scale-95 ${
                         glassIndex === idx 
-                          ? 'border-sky-600 bg-sky-50' 
-                          : 'border-sky-100 hover:border-sky-200 bg-sky-50'
+                          ? 'border-sky-500 bg-sky-50 shadow-sm' 
+                          : 'border-sky-100 hover:border-sky-200 bg-white'
                       }`}
                     >
                       <img src={g.url} alt={g.name} className="w-full h-full object-contain" />
@@ -954,37 +1041,38 @@ export default function CameraView() {
             {/* EFFECTS TAB CONTENT */}
             <div className={`${activeTab === 'effects' ? 'block' : 'hidden'}`}>
               {/* Vision Filters */}
-              <div className="bg-white rounded-lg shadow border border-sky-200 p-4">
+              <div className="bg-white rounded-xl shadow border border-sky-200 p-3 sm:p-4">
                 <h3 className="text-sm font-medium text-sky-700 mb-3">Chọn loại tật khuyết</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: "none", label: "Bình thường" },
-                    { value: "colorblind", label: "Mù màu" },
-                    { value: "nearsighted", label: "Cận thị" },
-                    { value: "farsighted", label: "Viễn thị" },
-                    { value: "cataract", label: "Đục thủy tinh thể" },
-                    { value: "glaucoma", label: "Tăng nhãn áp" },
+                    { value: "none", label: "Bình thường", icon: "✓" },
+                    { value: "colorblind", label: "Mù màu", icon: "🎨" },
+                    { value: "nearsighted", label: "Cận thị", icon: "👀" },
+                    { value: "farsighted", label: "Viễn thị", icon: "🔍" },
+                    { value: "cataract", label: "Đục thủy tinh thể", icon: "☁️" },
+                    { value: "glaucoma", label: "Glaucoma", icon: "⭕" },
                   ].map((f) => (
                     <button
                       key={f.value}
                       onClick={() => setFilter(f.value)}
-                      className={`py-2.5 px-3 rounded text-xs font-medium transition-all text-left ${
+                      className={`py-2.5 sm:py-3 px-3 rounded-lg text-xs sm:text-sm font-medium transition-all text-left flex items-center gap-2 active:scale-98 ${
                         filter === f.value 
-                          ? "bg-sky-500 text-white" 
+                          ? "bg-sky-500 text-white shadow-sm" 
                           : "bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-100"
                       }`}
                     >
-                      {f.label}
+                      <span className="text-sm">{f.icon}</span>
+                      <span>{f.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Dioptri Sliders */}
-              <div className="bg-white rounded-lg shadow border border-sky-200 overflow-hidden mt-3">
+              <div className="bg-white rounded-xl shadow border border-sky-200 overflow-hidden mt-3">
                 <button
                   onClick={() => setShowVisionPanel(!showVisionPanel)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-sky-50"
+                  className="w-full p-3 sm:p-4 flex items-center justify-between hover:bg-sky-50 active:bg-sky-100"
                 >
                   <span className="text-sm font-medium text-sky-700">Điều chỉnh độ khúc xạ</span>
                   <svg className={`w-4 h-4 text-sky-400 transition-transform ${showVisionPanel ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -992,7 +1080,7 @@ export default function CameraView() {
                   </svg>
                 </button>
                 {showVisionPanel && (
-                  <div className="px-4 pb-4 space-y-4 border-t border-sky-100">
+                  <div className="px-3 sm:px-4 pb-4 space-y-4 border-t border-sky-100">
                     <div className="pt-3">
                       <div className="flex justify-between text-xs mb-2">
                         <span className="text-sky-600">Cận thị (Myopia)</span>
@@ -1002,7 +1090,7 @@ export default function CameraView() {
                         type="range" min="-10" max="0" step="0.5"
                         value={visionSettings.myopia}
                         onChange={(e) => setVisionSettings(p => ({ ...p, myopia: parseFloat(e.target.value) }))}
-                        className="w-full h-1.5 bg-sky-200 rounded-full appearance-none cursor-pointer"
+                        className="w-full h-2 bg-sky-200 rounded-full appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
@@ -1014,7 +1102,7 @@ export default function CameraView() {
                         type="range" min="0" max="6" step="0.5"
                         value={visionSettings.hyperopia}
                         onChange={(e) => setVisionSettings(p => ({ ...p, hyperopia: parseFloat(e.target.value) }))}
-                        className="w-full h-1.5 bg-sky-200 rounded-full appearance-none cursor-pointer"
+                        className="w-full h-2 bg-sky-200 rounded-full appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
@@ -1026,12 +1114,12 @@ export default function CameraView() {
                         type="range" min="-6" max="0" step="0.5"
                         value={visionSettings.astigmatism}
                         onChange={(e) => setVisionSettings(p => ({ ...p, astigmatism: parseFloat(e.target.value) }))}
-                        className="w-full h-1.5 bg-sky-200 rounded-full appearance-none cursor-pointer"
+                        className="w-full h-2 bg-sky-200 rounded-full appearance-none cursor-pointer"
                       />
                     </div>
                     <button
                       onClick={() => setVisionSettings({ myopia: 0, hyperopia: 0, astigmatism: 0, axis: 0 })}
-                      className="w-full py-2 bg-sky-100 hover:bg-sky-200 rounded text-xs font-medium text-sky-600"
+                      className="w-full py-2.5 bg-sky-100 hover:bg-sky-200 active:bg-sky-300 rounded-lg text-xs font-medium text-sky-600 transition-all"
                     >
                       Đặt lại mặc định
                     </button>
@@ -1039,54 +1127,28 @@ export default function CameraView() {
                 )}
               </div>
 
-              {/* Empathy Mode */}
-              <div className="bg-sky-500 rounded-lg p-4 mt-3 text-white">
-                <h3 className="text-sm font-medium mb-3">Chế độ trải nghiệm</h3>
-                {!empathyMode ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: 'colorblind', label: 'Mù màu' },
-                      { id: 'glaucoma', label: 'Tăng nhãn áp' },
-                      { id: 'cataract', label: 'Đục thủy tinh' },
-                      { id: 'diabetic', label: 'Bệnh võng mạc' },
-                    ].map(c => (
-                      <button
-                        key={c.id}
-                        onClick={() => startEmpathyMode(c.id)}
-                        className="bg-sky-400 hover:bg-sky-300 py-2 px-3 rounded text-xs font-medium transition-all"
-                      >
-                        {c.label}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-2">
-                    <p className="text-2xl font-mono font-bold">{formatTime(empathyTimer)}</p>
-                    <button onClick={stopEmpathyMode} className="mt-3 bg-white text-sky-600 px-4 py-1.5 rounded text-xs font-medium hover:bg-sky-50 transition-colors">
-                      Kết thúc
-                    </button>
-                  </div>
-                )}
-              </div>
+
             </div>
 
             {/* TOOLS TAB CONTENT */}
             <div className={`${activeTab === 'tools' ? 'block' : 'hidden'}`}>
               {/* Quick Actions */}
-              <div className="bg-white rounded-lg shadow border border-sky-200 p-4">
+              <div className="bg-white rounded-xl shadow border border-sky-200 p-3 sm:p-4">
                 <h3 className="text-sm font-medium text-sky-700 mb-3">Công cụ hỗ trợ</h3>
                 <div className="space-y-2">
                   <button
                     onClick={startColorTest}
-                    className="w-full bg-sky-500 hover:bg-sky-400 text-white py-2.5 px-4 rounded text-sm font-medium transition-all text-left"
+                    className="w-full bg-sky-500 hover:bg-sky-400 active:bg-sky-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-2"
                   >
-                    Test mù màu Ishihara
+                    <span>🔴</span>
+                    <span>Test mù màu Ishihara</span>
                   </button>
                   <button
                     onClick={() => setShowGallery(true)}
-                    className="w-full bg-sky-100 hover:bg-sky-200 text-sky-600 py-2.5 px-4 rounded text-sm font-medium transition-all text-left"
+                    className="w-full bg-sky-100 hover:bg-sky-200 active:bg-sky-300 text-sky-600 py-3 px-4 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-2"
                   >
-                    Bộ sưu tập ảnh ({gallery.length})
+                    <span>📷</span>
+                    <span>Bộ sưu tập ảnh ({gallery.length})</span>
                   </button>
                 </div>
               </div>
