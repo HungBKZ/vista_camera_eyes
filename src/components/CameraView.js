@@ -69,21 +69,339 @@ const glassesList = [
 
 
 
-// ISHIHARA COLOR BLIND TEST PLATES
+// ISHIHARA COLOR BLIND TEST PLATES - Chuẩn y khoa
+// Màu sắc được tối ưu để người bình thường dễ nhìn thấy số
 const ishiharaPlates = [
-  { id: 1, number: "12", colors: { normal: "12", colorblind: "?" }, bgColor: "#8B9467", dotColor: "#C44536" },
-  { id: 2, number: "8", colors: { normal: "8", colorblind: "3" }, bgColor: "#6B8E23", dotColor: "#CD5C5C" },
-  { id: 3, number: "6", colors: { normal: "6", colorblind: "?" }, bgColor: "#9ACD32", dotColor: "#DC143C" },
-  { id: 4, number: "29", colors: { normal: "29", colorblind: "70" }, bgColor: "#808000", dotColor: "#B22222" },
-  { id: 5, number: "57", colors: { normal: "57", colorblind: "35" }, bgColor: "#556B2F", dotColor: "#CD853F" },
-  { id: 6, number: "5", colors: { normal: "5", colorblind: "2" }, bgColor: "#6B8E23", dotColor: "#E9967A" },
-  { id: 7, number: "3", colors: { normal: "3", colorblind: "5" }, bgColor: "#9ACD32", dotColor: "#F08080" },
-  { id: 8, number: "15", colors: { normal: "15", colorblind: "17" }, bgColor: "#808000", dotColor: "#FA8072" },
+  { 
+    id: 1, 
+    correctAnswer: "12",
+    type: "demonstration",
+    description: "Plate demo - Tất cả đều thấy số 12",
+    bgColors: ["#7CB342", "#8BC34A", "#9CCC65", "#689F38", "#7CB342", "#AED581"], // Xanh lá tươi
+    numColors: ["#E53935", "#F44336", "#EF5350", "#D32F2F", "#C62828", "#FF5252"], // Đỏ tươi
+  },
+  { 
+    id: 2, 
+    correctAnswer: "8",
+    type: "transformation",
+    description: "Người bình thường: 8",
+    bgColors: ["#66BB6A", "#81C784", "#A5D6A7", "#4CAF50", "#43A047", "#C8E6C9"],
+    numColors: ["#FF7043", "#FF8A65", "#FFAB91", "#F4511E", "#E64A19", "#FF5722"],
+  },
+  { 
+    id: 3, 
+    correctAnswer: "6",
+    type: "transformation",
+    description: "Người bình thường: 6",
+    bgColors: ["#9CCC65", "#AED581", "#C5E1A5", "#8BC34A", "#7CB342", "#DCEDC8"],
+    numColors: ["#FF5722", "#FF7043", "#FF8A65", "#F4511E", "#E64A19", "#BF360C"],
+  },
+  { 
+    id: 4, 
+    correctAnswer: "29",
+    type: "transformation", 
+    description: "Người bình thường: 29",
+    bgColors: ["#AED581", "#C5E1A5", "#DCEDC8", "#9CCC65", "#8BC34A", "#E8F5E9"],
+    numColors: ["#EF6C00", "#F57C00", "#FF9800", "#E65100", "#FB8C00", "#FFA726"],
+  },
+  { 
+    id: 5, 
+    correctAnswer: "57",
+    type: "transformation",
+    description: "Người bình thường: 57",
+    bgColors: ["#689F38", "#7CB342", "#8BC34A", "#558B2F", "#33691E", "#9CCC65"],
+    numColors: ["#FFB300", "#FFC107", "#FFCA28", "#FFA000", "#FF8F00", "#FFD54F"],
+  },
+  { 
+    id: 6, 
+    correctAnswer: "5",
+    type: "transformation",
+    description: "Người bình thường: 5",
+    bgColors: ["#81C784", "#A5D6A7", "#C8E6C9", "#66BB6A", "#4CAF50", "#E8F5E9"],
+    numColors: ["#E91E63", "#EC407A", "#F06292", "#D81B60", "#C2185B", "#F48FB1"],
+  },
+  { 
+    id: 7, 
+    correctAnswer: "3",
+    type: "transformation",
+    description: "Người bình thường: 3",
+    bgColors: ["#C5E1A5", "#DCEDC8", "#E8F5E9", "#AED581", "#9CCC65", "#F1F8E9"],
+    numColors: ["#D32F2F", "#E53935", "#F44336", "#C62828", "#B71C1C", "#EF5350"],
+  },
+  { 
+    id: 8, 
+    correctAnswer: "15",
+    type: "transformation",
+    description: "Người bình thường: 15",
+    bgColors: ["#AFB42B", "#C0CA33", "#CDDC39", "#9E9D24", "#827717", "#D4E157"],
+    numColors: ["#FF5252", "#FF1744", "#F44336", "#D50000", "#E53935", "#FF8A80"],
+  },
+  { 
+    id: 9, 
+    correctAnswer: "74",
+    type: "transformation",
+    description: "Người bình thường: 74",
+    bgColors: ["#7CB342", "#8BC34A", "#9CCC65", "#689F38", "#558B2F", "#AED581"],
+    numColors: ["#FF6F00", "#FF8F00", "#FFA000", "#E65100", "#FFB300", "#FFCA28"],
+  },
+  { 
+    id: 10, 
+    correctAnswer: "2",
+    type: "transformation",
+    description: "Người bình thường: 2",
+    bgColors: ["#4CAF50", "#66BB6A", "#81C784", "#43A047", "#388E3C", "#A5D6A7"], // Xanh lá đậm hơn
+    numColors: ["#D50000", "#FF1744", "#F44336", "#B71C1C", "#C62828", "#E53935"], // Đỏ rực hơn
+  },
+  { 
+    id: 11, 
+    correctAnswer: "97",
+    type: "transformation",
+    description: "Người bình thường: 97",
+    bgColors: ["#DCEDC8", "#E8F5E9", "#F1F8E9", "#C5E1A5", "#AED581", "#FAFAFA"],
+    numColors: ["#AD1457", "#C2185B", "#D81B60", "#880E4F", "#E91E63", "#EC407A"],
+  },
+  { 
+    id: 12, 
+    correctAnswer: "45",
+    type: "transformation",
+    description: "Người bình thường: 45",
+    bgColors: ["#8BC34A", "#9CCC65", "#AED581", "#7CB342", "#689F38", "#C5E1A5"],
+    numColors: ["#E65100", "#EF6C00", "#F57C00", "#BF360C", "#FF9800", "#FF5722"],
+  },
+  // ===== HIDDEN DIGIT PLATES - Người mù màu CÓ THỂ thấy, người bình thường KHÓ thấy =====
+  { 
+    id: 13, 
+    correctAnswer: "2",
+    type: "hidden",
+    description: "Người mù màu có thể thấy: 2",
+    // Nền xanh ngọc (teal) và số cam - độ sáng tương tự nhau
+    // Người bình thường khó phân biệt vì màu sắc gây nhiễu
+    // Người mù màu thấy được vì họ phân biệt theo độ sáng
+    bgColors: ["#26A69A", "#4DB6AC", "#80CBC4", "#009688", "#00897B", "#B2DFDB"],
+    numColors: ["#FF8A65", "#FFAB91", "#FFCCBC", "#FF7043", "#FF5722", "#FBE9E7"],
+  },
+  { 
+    id: 14, 
+    correctAnswer: "5",
+    type: "hidden",
+    description: "Người mù màu có thể thấy: 5",
+    // Nền tím/hồng và số xanh dương - khó phân biệt với người bình thường
+    bgColors: ["#AB47BC", "#BA68C8", "#CE93D8", "#9C27B0", "#8E24AA", "#E1BEE7"],
+    numColors: ["#7986CB", "#9FA8DA", "#C5CAE9", "#5C6BC0", "#3F51B5", "#E8EAF6"],
+  },
+  { 
+    id: 15, 
+    correctAnswer: "16",
+    type: "hidden",
+    description: "Người mù màu có thể thấy: 16",
+    // Nền cam nhạt và số xanh lá nhạt - độ sáng tương đương
+    bgColors: ["#FFCC80", "#FFE0B2", "#FFF3E0", "#FFB74D", "#FFA726", "#FFECB3"],
+    numColors: ["#A5D6A7", "#C8E6C9", "#E8F5E9", "#81C784", "#66BB6A", "#DCEDC8"],
+  },
+  { 
+    id: 16, 
+    correctAnswer: "42",
+    type: "hidden", 
+    description: "Người mù màu có thể thấy: 42",
+    // Nền đỏ nhạt và số xanh ngọc nhạt
+    bgColors: ["#EF9A9A", "#FFCDD2", "#FFEBEE", "#E57373", "#EF5350", "#FCE4EC"],
+    numColors: ["#80DEEA", "#B2EBF2", "#E0F7FA", "#4DD0E1", "#26C6DA", "#E0F2F1"],
+  },
+  // ===== THÊM CÁC PLATE TRANSFORMATION =====
+  { 
+    id: 17, 
+    correctAnswer: "73",
+    type: "transformation",
+    description: "Người bình thường: 73",
+    bgColors: ["#66BB6A", "#81C784", "#A5D6A7", "#4CAF50", "#43A047", "#C8E6C9"],
+    numColors: ["#FF5722", "#FF7043", "#FF8A65", "#F4511E", "#E64A19", "#FFAB91"],
+  },
+  { 
+    id: 18, 
+    correctAnswer: "26",
+    type: "transformation",
+    description: "Người bình thường: 26",
+    bgColors: ["#AED581", "#C5E1A5", "#DCEDC8", "#9CCC65", "#8BC34A", "#E8F5E9"],
+    numColors: ["#D84315", "#E64A19", "#F4511E", "#BF360C", "#FF5722", "#FF7043"],
+  },
 ];
+
+// Hàm vẽ Ishihara Plate trên canvas
+const drawIshiharaPlate = (canvas, plate) => {
+  const ctx = canvas.getContext('2d');
+  const size = canvas.width;
+  const centerX = size / 2;
+  const centerY = size / 2;
+  const radius = size / 2 - 5;
+  
+  // Clear canvas
+  ctx.clearRect(0, 0, size, size);
+  
+  // Fill background với màu trắng
+  ctx.fillStyle = '#f5f5f0';
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Tạo các chấm tròn - TĂNG MẬT ĐỘ VÀ GIẢM KÍCH THƯỚC
+  const dots = [];
+  const minDotRadius = size * 0.012;  // Chấm nhỏ hơn để rõ số hơn
+  const maxDotRadius = size * 0.028;  // Kích thước max nhỏ hơn
+  const padding = 1; // Giảm padding để chấm dày đặc hơn
+  
+  // Tạo đường path cho số - TĂNG KÍCH THƯỚC SỐ
+  const numberPath = createNumberPath(plate.correctAnswer, centerX, centerY, size * 0.5); // Số to hơn
+  
+  // Đổ đầy hình tròn bằng các chấm - TĂNG SỐ LƯỢNG
+  let attempts = 0;
+  const maxAttempts = 5000; // Tăng số lần thử
+  
+  while (attempts < maxAttempts) {
+    attempts++;
+    
+    // Random vị trí trong hình tròn
+    const angle = Math.random() * Math.PI * 2;
+    const r = Math.random() * (radius - maxDotRadius);
+    const x = centerX + Math.cos(angle) * r;
+    const y = centerY + Math.sin(angle) * r;
+    
+    // Random kích thước chấm
+    const dotRadius = minDotRadius + Math.random() * (maxDotRadius - minDotRadius);
+    
+    // Kiểm tra chấm có nằm trong hình tròn không
+    const distFromCenter = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+    if (distFromCenter + dotRadius > radius) continue;
+    
+    // Kiểm tra chồng lấn với các chấm khác
+    let overlapping = false;
+    for (const dot of dots) {
+      const dist = Math.sqrt((x - dot.x) ** 2 + (y - dot.y) ** 2);
+      if (dist < dot.radius + dotRadius + padding) {
+        overlapping = true;
+        break;
+      }
+    }
+    if (overlapping) continue;
+    
+    // Kiểm tra chấm có nằm trên số không
+    const isOnNumber = isPointInNumberPath(x, y, numberPath);
+    
+    // Chọn màu - TĂNG ĐỘ TƯƠNG PHẢN
+    let color;
+    if (plate.type === 'hidden') {
+      // Với hidden plate, số gần như cùng màu với nền (khó thấy với người bình thường)
+      if (isOnNumber) {
+        color = plate.numColors[Math.floor(Math.random() * plate.numColors.length)];
+      } else {
+        color = plate.bgColors[Math.floor(Math.random() * plate.bgColors.length)];
+      }
+    } else {
+      // Với các plate khác, số có màu tương phản RÕ RÀNG với nền
+      if (isOnNumber) {
+        color = plate.numColors[Math.floor(Math.random() * plate.numColors.length)];
+      } else {
+        color = plate.bgColors[Math.floor(Math.random() * plate.bgColors.length)];
+      }
+    }
+    
+    dots.push({ x, y, radius: dotRadius, color });
+  }
+  
+  // Vẽ tất cả các chấm
+  dots.forEach(dot => {
+    ctx.fillStyle = dot.color;
+    ctx.beginPath();
+    ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
+    ctx.fill();
+  });
+};
+
+// Tạo path cho số (trả về mảng các điểm tạo thành số)
+const createNumberPath = (numberStr, centerX, centerY, fontSize) => {
+  const paths = [];
+  const digits = numberStr.split('');
+  const digitWidth = fontSize * 0.7; // Tăng độ rộng số
+  const totalWidth = digits.length * digitWidth;
+  let startX = centerX - totalWidth / 2;
+  
+  digits.forEach((digit) => {
+    const digitPath = getDigitPath(digit, startX + digitWidth / 2, centerY, fontSize);
+    paths.push(...digitPath);
+    startX += digitWidth;
+  });
+  
+  return paths;
+};
+
+// Lấy path cho từng chữ số - TĂNG ĐỘ DÀY NÉT
+const getDigitPath = (digit, cx, cy, size) => {
+  const h = size; // Chiều cao
+  const w = size * 0.6; // Chiều rộng - tăng lên
+  const t = size * 0.18; // Độ dày nét - TĂNG MẠNH từ 0.12 lên 0.18
+  
+  // Định nghĩa các segment (trên, giữa, dưới, trái-trên, trái-dưới, phải-trên, phải-dưới)
+  const segments = {
+    '0': ['top', 'topLeft', 'topRight', 'bottomLeft', 'bottomRight', 'bottom'],
+    '1': ['topRight', 'bottomRight'],
+    '2': ['top', 'topRight', 'middle', 'bottomLeft', 'bottom'],
+    '3': ['top', 'topRight', 'middle', 'bottomRight', 'bottom'],
+    '4': ['topLeft', 'topRight', 'middle', 'bottomRight'],
+    '5': ['top', 'topLeft', 'middle', 'bottomRight', 'bottom'],
+    '6': ['top', 'topLeft', 'middle', 'bottomLeft', 'bottomRight', 'bottom'],
+    '7': ['top', 'topRight', 'bottomRight'],
+    '8': ['top', 'topLeft', 'topRight', 'middle', 'bottomLeft', 'bottomRight', 'bottom'],
+    '9': ['top', 'topLeft', 'topRight', 'middle', 'bottomRight', 'bottom'],
+  };
+  
+  const activeSegments = segments[digit] || [];
+  const rects = [];
+  
+  activeSegments.forEach(seg => {
+    switch (seg) {
+      case 'top':
+        rects.push({ x: cx - w/2, y: cy - h/2, w: w, h: t });
+        break;
+      case 'middle':
+        rects.push({ x: cx - w/2, y: cy - t/2, w: w, h: t });
+        break;
+      case 'bottom':
+        rects.push({ x: cx - w/2, y: cy + h/2 - t, w: w, h: t });
+        break;
+      case 'topLeft':
+        rects.push({ x: cx - w/2, y: cy - h/2, w: t, h: h/2 + t/2 });
+        break;
+      case 'bottomLeft':
+        rects.push({ x: cx - w/2, y: cy - t/2, w: t, h: h/2 + t/2 });
+        break;
+      case 'topRight':
+        rects.push({ x: cx + w/2 - t, y: cy - h/2, w: t, h: h/2 + t/2 });
+        break;
+      case 'bottomRight':
+        rects.push({ x: cx + w/2 - t, y: cy - t/2, w: t, h: h/2 + t/2 });
+        break;
+      default:
+        break;
+    }
+  });
+  
+  return rects;
+};
+
+// Kiểm tra điểm có nằm trong path số không
+const isPointInNumberPath = (px, py, rects) => {
+  for (const rect of rects) {
+    if (px >= rect.x && px <= rect.x + rect.w &&
+        py >= rect.y && py <= rect.y + rect.h) {
+      return true;
+    }
+  }
+  return false;
+};
 
 export default function CameraView() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
+  const ishiharaCanvasRef = useRef(null); // Canvas cho Ishihara plates
   const [faceLandmarker, setFaceLandmarker] = useState(null);
   const [filter, setFilter] = useState("none");
   const [glassIndex, setGlassIndex] = useState(0);
@@ -245,23 +563,39 @@ export default function CameraView() {
     loadImages();
   }, []);
 
-  // COLOR BLIND TEST FUNCTIONS
+  // COLOR BLIND TEST FUNCTIONS - Chuẩn y khoa
   const generateOptions = (index) => {
-    const correctAnswer = ishiharaPlates[index].number;
-    const correctNum = parseInt(correctAnswer);
+    const plate = ishiharaPlates[index];
+    const correctAnswer = plate.correctAnswer;
     
-    // Tao 5 dap an ngau nhien + 1 dap an dung
+    // Nếu là plate "hidden" (người bình thường không thấy số)
+    if (plate.type === "hidden") {
+      // Tạo các đáp án ngẫu nhiên, đáp án đúng là "Không thấy số"
+      const fakeNumbers = [];
+      while (fakeNumbers.length < 5) {
+        const num = Math.floor(Math.random() * 90) + 1;
+        if (!fakeNumbers.includes(String(num))) {
+          fakeNumbers.push(String(num));
+        }
+      }
+      const shuffled = fakeNumbers.sort(() => Math.random() - 0.5);
+      return [...shuffled, '?']; // '?' = Không thấy số (đáp án đúng cho hidden plates)
+    }
+    
+    // Với các plate thông thường
+    const correctNum = parseInt(correctAnswer);
     const options = new Set([correctAnswer]);
+    
+    // Tạo 5 đáp án nhiễu gần với đáp án đúng
     while (options.size < 6) {
-      // Random so gan voi dap an dung (+-15)
-      const variance = Math.floor(Math.random() * 30) - 15;
-      const randomNum = Math.max(1, correctNum + variance);
+      const variance = Math.floor(Math.random() * 20) - 10;
+      const randomNum = Math.max(1, Math.min(99, correctNum + variance));
       if (String(randomNum) !== correctAnswer) {
         options.add(String(randomNum));
       }
     }
     
-    // Shuffle va them option "Khong thay"
+    // Shuffle và thêm option "Không thấy số"
     const shuffled = [...options].sort(() => Math.random() - 0.5);
     return [...shuffled, '?'];
   };
@@ -274,6 +608,16 @@ export default function CameraView() {
     setColorTestOptions(generateOptions(0));
   };
 
+  // Effect để vẽ Ishihara plate khi test bắt đầu hoặc khi chuyển câu hỏi
+  useEffect(() => {
+    if (showColorTest && !colorTestResult && ishiharaCanvasRef.current) {
+      const canvas = ishiharaCanvasRef.current;
+      canvas.width = 280;
+      canvas.height = 280;
+      drawIshiharaPlate(canvas, ishiharaPlates[colorTestIndex]);
+    }
+  }, [showColorTest, colorTestIndex, colorTestResult]);
+
   const submitColorTestAnswer = (answer) => {
     const newAnswers = [...colorTestAnswers, answer];
     setColorTestAnswers(newAnswers);
@@ -283,21 +627,57 @@ export default function CameraView() {
       setColorTestIndex(nextIndex);
       setColorTestOptions(generateOptions(nextIndex));
     } else {
-      // Calculate result
-      let correct = 0;
+      // Tính kết quả theo chuẩn y khoa
+      let correctTransformation = 0; // Plates biến đổi (người bình thường thấy số)
+      let correctHidden = 0; // Plates ẩn (người bình thường không thấy)
+      let totalTransformation = 0;
+      let totalHidden = 0;
+      
       newAnswers.forEach((ans, idx) => {
-        if (ans === ishiharaPlates[idx].number) {
-          correct++;
+        const plate = ishiharaPlates[idx];
+        if (plate.type === "hidden") {
+          totalHidden++;
+          // Người bình thường không thấy số trong hidden plates
+          if (ans === '?') correctHidden++;
+        } else {
+          totalTransformation++;
+          // Người bình thường thấy đúng số
+          if (ans === plate.correctAnswer) correctTransformation++;
         }
       });
-      const percentage = (correct / ishiharaPlates.length) * 100;
-      let diagnosis = "Thi luc mau binh thuong";
-      if (percentage < 50) {
-        diagnosis = "Co the bi mu mau - Nen gap bac si";
-      } else if (percentage < 75) {
-        diagnosis = "Co dau hieu roi loan nhan mau nhe";
+      
+      const totalCorrect = correctTransformation + correctHidden;
+      const percentage = (totalCorrect / ishiharaPlates.length) * 100;
+      
+      // Chẩn đoán theo chuẩn y khoa
+      let diagnosis = "";
+      let severity = "normal";
+      
+      if (percentage >= 90) {
+        diagnosis = "Thị lực màu bình thường. Bạn có khả năng phân biệt màu sắc tốt.";
+        severity = "normal";
+      } else if (percentage >= 75) {
+        diagnosis = "Có dấu hiệu rối loạn nhận màu nhẹ. Nên kiểm tra thêm với chuyên gia.";
+        severity = "mild";
+      } else if (percentage >= 50) {
+        diagnosis = "Có thể bị rối loạn sắc giác (mù màu một phần). Khuyến nghị khám chuyên khoa mắt.";
+        severity = "moderate";
+      } else {
+        diagnosis = "Có dấu hiệu mù màu. Cần đến bác sĩ chuyên khoa mắt để chẩn đoán chính xác.";
+        severity = "severe";
       }
-      setColorTestResult({ correct, total: ishiharaPlates.length, percentage, diagnosis });
+      
+      setColorTestResult({ 
+        correct: totalCorrect, 
+        total: ishiharaPlates.length, 
+        percentage, 
+        diagnosis,
+        severity,
+        details: {
+          transformation: { correct: correctTransformation, total: totalTransformation },
+          hidden: { correct: correctHidden, total: totalHidden }
+        }
+      });
     }
   };
 
@@ -1181,114 +1561,188 @@ export default function CameraView() {
 
       {/* COLOR BLIND TEST MODAL */}
       {showColorTest && (
-        <div className="fixed inset-0 bg-sky-600/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-5 shadow-xl">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-sky-700">
-                Test Mù Màu Ishihara
-              </h2>
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">
+                  Test Mù Màu Ishihara
+                </h2>
+                <p className="text-xs text-gray-500">Chuẩn y khoa quốc tế</p>
+              </div>
               <button
                 onClick={() => setShowColorTest(false)}
-                className="text-sky-400 hover:text-sky-600 text-2xl"
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 text-lg transition-all"
               >
-                x
+                ✕
               </button>
             </div>
 
             {!colorTestResult ? (
               <div>
-                <div className="text-center mb-4">
-                  <p className="text-sm text-sky-600 mb-2">
-                    Câu hỏi {colorTestIndex + 1} / {ishiharaPlates.length}
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                {/* Progress */}
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-600">Tiến độ</span>
+                    <span className="font-medium text-sky-600">
+                      {colorTestIndex + 1} / {ishiharaPlates.length}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div 
-                      className="bg-green-500 h-2 rounded-full transition-all"
+                      className="bg-gradient-to-r from-sky-400 to-sky-600 h-2.5 rounded-full transition-all duration-300"
                       style={{ width: `${((colorTestIndex + 1) / ishiharaPlates.length) * 100}%` }}
                     />
                   </div>
                 </div>
 
-                {/* ISHIHARA PLATE SIMULATION */}
-                <div 
-                  className="w-64 h-64 mx-auto rounded-full flex items-center justify-center relative overflow-hidden mb-6"
-                  style={{ 
-                    background: `radial-gradient(circle, ${ishiharaPlates[colorTestIndex].bgColor} 0%, ${ishiharaPlates[colorTestIndex].bgColor} 100%)` 
-                  }}
-                >
-                  {/* Generate random dots pattern */}
-                  {[...Array(200)].map((_, i) => {
-                    const isNumber = Math.random() > 0.6;
-                    const size = Math.random() * 12 + 6;
-                    const x = Math.random() * 200 + 32;
-                    const y = Math.random() * 200 + 32;
-                    return (
-                      <div
-                        key={i}
-                        className="absolute rounded-full"
-                        style={{
-                          width: size,
-                          height: size,
-                          left: x,
-                          top: y,
-                          backgroundColor: isNumber ? ishiharaPlates[colorTestIndex].dotColor : ishiharaPlates[colorTestIndex].bgColor,
-                          opacity: 0.8 + Math.random() * 0.2,
-                        }}
-                      />
-                    );
-                  })}
-                  <span 
-                    className="text-6xl font-bold relative z-10"
-                    style={{ color: ishiharaPlates[colorTestIndex].dotColor }}
-                  >
-                    {ishiharaPlates[colorTestIndex].number}
-                  </span>
+                {/* ISHIHARA PLATE - Vẽ bằng Canvas */}
+                <div className="relative mb-4">
+                  <div className="w-full max-w-[280px] mx-auto aspect-square rounded-2xl overflow-hidden shadow-lg border-4 border-gray-100 bg-[#f5f5f0]">
+                    <canvas 
+                      ref={ishiharaCanvasRef}
+                      className="w-full h-full"
+                      style={{ borderRadius: '50%' }}
+                    />
+                  </div>
+                  {/* Plate type indicator */}
+                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                    <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${
+                      ishiharaPlates[colorTestIndex].type === 'demonstration' 
+                        ? 'bg-blue-100 text-blue-700'
+                        : ishiharaPlates[colorTestIndex].type === 'hidden'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-green-100 text-green-700'
+                    }`}>
+                      {ishiharaPlates[colorTestIndex].type === 'demonstration' 
+                        ? 'Demo' 
+                        : ishiharaPlates[colorTestIndex].type === 'hidden'
+                        ? 'Đặc biệt'
+                        : `Plate ${colorTestIndex + 1}`}
+                    </span>
+                  </div>
                 </div>
 
-                <p className="text-center text-sky-600 mb-4 font-medium">
-                  Bạn nhìn thấy số nào?
+                <p className="text-center text-gray-700 mb-4 font-medium">
+                  Bạn nhìn thấy số nào trong hình?
                 </p>
 
-                <div className="grid grid-cols-3 gap-2">
+                {/* Answer options */}
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {colorTestOptions.map((num, idx) => (
                     <button
                       key={idx}
                       onClick={() => submitColorTestAnswer(num)}
-                      className="py-3 bg-sky-100 hover:bg-sky-600 hover:text-white rounded-lg font-bold text-lg transition-all"
+                      className={`py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all active:scale-95 ${
+                        num === '?' 
+                          ? 'bg-gray-100 hover:bg-gray-200 text-gray-600 col-span-3 sm:col-span-4' 
+                          : 'bg-sky-50 hover:bg-sky-500 hover:text-white text-sky-700 border border-sky-200'
+                      }`}
                     >
-                      {num === '?' ? 'Không thấy' : num}
+                      {num === '?' ? '🚫 Không thấy số nào' : num}
                     </button>
                   ))}
+                </div>
+
+                {/* Hướng dẫn */}
+                <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                  <p className="text-xs text-amber-700">
+                    <strong>💡 Hướng dẫn:</strong> Nhìn vào tâm hình trong vòng 3-5 giây, sau đó chọn số bạn nhìn thấy. 
+                    Nếu không thấy số nào rõ ràng, chọn "Không thấy số nào".
+                  </p>
                 </div>
               </div>
             ) : (
               <div className="text-center">
-                <div className={`text-5xl mb-4 ${colorTestResult.percentage >= 75 ? '' : ''}`}>
-                  {colorTestResult.percentage >= 75 ? 'O' : colorTestResult.percentage >= 50 ? '-' : '!'}
-                </div>
-                <h3 className="text-xl font-semibold mb-2 text-sky-700">Kết quả</h3>
-                <p className="text-3xl font-bold text-sky-600 mb-2">
-                  {colorTestResult.correct} / {colorTestResult.total}
-                </p>
-                <p className="text-sky-600 mb-4">{colorTestResult.percentage.toFixed(0)}% chính xác</p>
-                <div className={`p-4 rounded-lg mb-4 ${
-                  colorTestResult.percentage >= 75 
-                    ? 'bg-sky-100 text-sky-700' 
-                    : colorTestResult.percentage >= 50 
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-rose-100 text-rose-700'
+                {/* Result icon */}
+                <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 ${
+                  colorTestResult.severity === 'normal' ? 'bg-green-100' :
+                  colorTestResult.severity === 'mild' ? 'bg-yellow-100' :
+                  colorTestResult.severity === 'moderate' ? 'bg-orange-100' :
+                  'bg-red-100'
                 }`}>
-                  <p className="font-medium">{colorTestResult.diagnosis}</p>
+                  {colorTestResult.severity === 'normal' ? '✅' :
+                   colorTestResult.severity === 'mild' ? '⚠️' :
+                   colorTestResult.severity === 'moderate' ? '🔶' : '🔴'}
                 </div>
-                <button
-                  onClick={() => {
-                    setShowColorTest(false);
-                    setColorTestResult(null);
-                  }}
-                  className="bg-sky-500 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-sky-400 transition-all"
-                >
-                  Đóng
-                </button>
+
+                <h3 className="text-xl font-bold mb-2 text-gray-800">Kết quả kiểm tra</h3>
+                
+                {/* Score */}
+                <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                  <p className="text-4xl font-bold text-sky-600 mb-1">
+                    {colorTestResult.correct} / {colorTestResult.total}
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    Độ chính xác: <span className="font-semibold">{colorTestResult.percentage.toFixed(0)}%</span>
+                  </p>
+                </div>
+
+                {/* Details */}
+                {colorTestResult.details && (
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-green-50 rounded-lg p-3">
+                      <p className="text-xs text-green-600 mb-1">Plates thường</p>
+                      <p className="text-sm text-green-500 mb-1">(Người BT thấy số)</p>
+                      <p className="text-lg font-bold text-green-700">
+                        {colorTestResult.details.transformation.correct}/{colorTestResult.details.transformation.total}
+                      </p>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-3">
+                      <p className="text-xs text-purple-600 mb-1">Plates đặc biệt</p>
+                      <p className="text-sm text-purple-500 mb-1">(Người mù màu thấy)</p>
+                      <p className="text-lg font-bold text-purple-700">
+                        {colorTestResult.details.hidden.correct}/{colorTestResult.details.hidden.total}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Diagnosis */}
+                <div className={`p-4 rounded-xl mb-4 text-left ${
+                  colorTestResult.severity === 'normal' ? 'bg-green-50 border border-green-200' :
+                  colorTestResult.severity === 'mild' ? 'bg-yellow-50 border border-yellow-200' :
+                  colorTestResult.severity === 'moderate' ? 'bg-orange-50 border border-orange-200' :
+                  'bg-red-50 border border-red-200'
+                }`}>
+                  <p className={`font-medium text-sm ${
+                    colorTestResult.severity === 'normal' ? 'text-green-700' :
+                    colorTestResult.severity === 'mild' ? 'text-yellow-700' :
+                    colorTestResult.severity === 'moderate' ? 'text-orange-700' :
+                    'text-red-700'
+                  }`}>
+                    {colorTestResult.diagnosis}
+                  </p>
+                </div>
+
+                {/* Disclaimer */}
+                <p className="text-[10px] text-gray-400 mb-4">
+                  ⚕️ Kết quả này chỉ mang tính tham khảo. Để có chẩn đoán chính xác, vui lòng đến gặp bác sĩ chuyên khoa mắt.
+                </p>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setColorTestResult(null);
+                      setColorTestIndex(0);
+                      setColorTestAnswers([]);
+                      setColorTestOptions(generateOptions(0));
+                    }}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-xl font-medium transition-all"
+                  >
+                    🔄 Làm lại
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowColorTest(false);
+                      setColorTestResult(null);
+                    }}
+                    className="flex-1 bg-sky-500 hover:bg-sky-400 text-white px-4 py-3 rounded-xl font-medium transition-all"
+                  >
+                    Đóng
+                  </button>
+                </div>
               </div>
             )}
           </div>
