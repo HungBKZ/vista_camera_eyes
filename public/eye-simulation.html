@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Patient Perspective - Mobile Responsive</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #00ff88;
+            --bg-color: #000000;
+            --panel-bg: rgba(20, 20, 20, 0.85);
+            --warning-bg: rgba(220, 38, 38, 0.85);
+        }
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: white;
+            font-family: sans-serif;
+            width: 100vw;
+            /* FIX 1: Sử dụng dvh để tránh bị thanh safari che */
+            height: 100vh; /* Fallback */
+            height: 100dvh; 
+            overflow: hidden;
+        }
+
+        .viewport-container {
+            position: relative;
+            width: 100%; height: 100%;
+        }
+
+        .media-wrapper {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #input_video {
+            position: absolute;
+            width: 1px; height: 1px;
+            opacity: 0;
+            z-index: -1;
+        }
+
+        #output_canvas {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1) translateZ(0);
+            will-change: filter; 
+            backface-visibility: hidden;
+            transition: filter 0.1s linear, -webkit-filter 0.1s linear;
+        }
+
+        .control-panel {
+            position: absolute; 
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            padding: 12px 15px; border-radius: 12px;
+            z-index: 100;
+            border: 1px solid rgba(255,255,255,0.15);
+            width: 90%; max-width: 650px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+
+            /* FIX 2: Đẩy lên khỏi vùng an toàn của iPhone (cạnh dưới + thanh home) */
+            bottom: 30px; /* Fallback */
+            bottom: calc(20px + env(safe-area-inset-bottom)); 
+        }
+
+        .mode-groups { display: flex; flex-direction: column; gap: 10px; }
+        .button-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+
+        button {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #ddd; padding: 8px 12px; border-radius: 6px;
+            cursor: pointer; font-size: 0.8rem; 
+            /* Chống double-tap zoom trên iOS */
+            touch-action: manipulation; 
+        }
+        button.active {
+            background: var(--primary-color); color: #000; font-weight: bold; border-color: var(--primary-color);
+        }
+
+        .status-indicator {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(0,0,0,0.6); padding: 8px; border-radius: 6px;
+            font-size: 0.75rem; font-family: monospace; z-index: 101;
+            border: 1px solid rgba(255,255,255,0.2); pointer-events: none;
+            /* Đẩy xuống khỏi tai thỏ nếu cần */
+            top: max(20px, env(safe-area-inset-top)); 
+        }
+
+        /* Back button */
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            top: max(20px, env(safe-area-inset-top));
+            left: max(20px, env(safe-area-inset-left));
+            background: rgba(14, 165, 233, 0.9);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 102;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+        .back-btn:hover {
+            background: rgba(2, 132, 199, 1);
+            transform: translateY(-2px);
+        }
+        .back-btn:active {
+            transform: translateY(0);
+        }
+        
+        .warning-overlay {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--warning-bg);
+            color: white; padding: 20px 30px; border-radius: 12px;
+            text-align: center; z-index: 200;
+            display: none; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            pointer-events: none; animation: pulse 2s infinite;
+            width: 80%; /* Giới hạn chiều rộng trên mobile */
+        }
+        
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.03); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* FIX 3: Responsive cho màn hình nhỏ (Mobile) */
+        @media (max-width: 600px) {
+            .control-panel {
+                width: 95%; /* Rộng hơn chút trên đt */
+                padding: 10px;
+                /* Đẩy sát xuống dưới hơn chút để tiết kiệm diện tích */
+                bottom: calc(15px + env(safe-area-inset-bottom)); 
+            }
+            button {
+                padding: 6px 10px; /* Nút nhỏ hơn chút */
+                font-size: 0.75rem;
+            }
+            .mode-groups { gap: 6px; }
+            .status-indicator {
+                font-size: 0.65rem;
+                padding: 5px;
+            }
+        }
+
+        .svg-filters { position: absolute; left: -9999px; top: -9999px; width: 0; height: 0; }
+    </style>
+</head>
+<body>
+    <svg class="svg-filters">
+        <defs>
+            <filter id="protanopiaFilter" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.567,0.433,0,0,0 0.558,0.442,0,0,0 0,0.242,0.758,0,0 0,0,0,1,0" /></filter>
+            <filter id="deuteranopiaFilter" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.625,0.375,0,0,0 0.7,0.3,0,0,0 0,0,1,0,0 0,0,0,1,0" /></filter>
+            <filter id="tritanopiaFilter" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.95,0.05,0,0,0 0,0.433,0.567,0,0 0,0.475,0.525,0,0 0,0,0,1,0" /></filter>
+            <filter id="achromatopsiaFilter" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.213,0.715,0.072,0,0 0.213,0.715,0.072,0,0 0.213,0.715,0.072,0,0 0,0,0,1,0" /></filter>
+        </defs>
+    </svg>
+
+    <div class="viewport-container">
+        <!-- Back button -->
+        <a href="/" class="back-btn">← Quay lại</a>
+
+        <div class="media-wrapper">
+            <video id="input_video" playsinline muted autoplay></video>
+            <canvas id="output_canvas"></canvas>
+            
+            <div id="no-face-warning" class="warning-overlay">
+                <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
+                <div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 5px;">KHÔNG TÌM THẤY MẶT</div>
+                <div style="font-size: 0.8rem; opacity: 0.9;">Di chuyển vào khung hình</div>
+            </div>
+        </div>
+
+        <div class="status-indicator">
+            Mode: <span id="mode-debug" style="color:var(--primary-color)">Normal</span><br>
+            Blur: <span id="blur-debug">0.0</span>px
+        </div>
+
+        <div class="control-panel">
+            <div class="mode-groups">
+                <div class="button-row">
+                    <button class="active" data-mode="normal">Bình thường</button>
+                    <button data-mode="myopia">Cận thị</button>
+                    <button data-mode="hyperopia">Viễn thị</button>
+                    <button data-mode="presbyopia">Lão thị</button>
+                </div>
+                <div class="button-row">
+                    <button data-mode="protanopia">Mù đỏ</button>
+                    <button data-mode="deuteranopia">Mù xanh lá</button>
+                    <button data-mode="tritanopia">Mù xanh dương</button>
+                    <button data-mode="achromatopsia">Mù hoàn toàn</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const videoElement = document.getElementById('input_video');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d', { alpha: false });
+    const blurDebug = document.getElementById('blur-debug');
+    const modeDebug = document.getElementById('mode-debug');
+    const buttons = document.querySelectorAll('button[data-mode]');
+    const warningElement = document.getElementById('no-face-warning');
+
+    const CONFIG = {
+        minBlur: 0, maxBlur: 18, smoothingFactor: 0.15,
+        farThreshold: 0.04, nearThreshold: 0.18,
+        presbyopiaRangeMin: 0.06, presbyopiaRangeMax: 0.12 
+    };
+
+    const MODES = {
+        'normal': { type: 'none', label: 'Bình thường' },
+        'myopia': { type: 'focus', algorithm: 'blur_far', label: 'Cận thị' },
+        'hyperopia': { type: 'focus', algorithm: 'blur_near', label: 'Viễn thị' },
+        'presbyopia': { type: 'focus', algorithm: 'blur_outside_range', label: 'Lão thị' },
+        'protanopia': { type: 'color', filterId: '#protanopiaFilter', label: 'Protanopia' },
+        'deuteranopia': { type: 'color', filterId: '#deuteranopiaFilter', label: 'Deuteranopia' },
+        'tritanopia': { type: 'color', filterId: '#tritanopiaFilter', label: 'Tritanopia' },
+        'achromatopsia': { type: 'color', filterId: '#achromatopsiaFilter', label: 'Achromatopsia' },
+    };
+
+    let currentModeKey = 'normal';
+    let currentBlur = 0;
+    let targetBlur = 0;
+    let lastFilterStr = ''; 
+
+    // Hàm vẽ video lên canvas (cho chế độ màu - không AI)
+    function renderColorMode() {
+        if (canvasElement.width !== videoElement.videoWidth) {
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+        }
+        // Vẽ video trực tiếp
+        canvasCtx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+        
+        // Ẩn cảnh báo vì không detect mặt
+        warningElement.style.display = 'none';
+
+        // Apply filter màu
+        const mode = MODES[currentModeKey];
+        applyVisuals(0, mode);
+    }
+
+    function calculateFocusBlur(faceArea, modeSettings) {
+        let ratio = 0;
+        if (modeSettings.algorithm === 'blur_far') {
+            if (faceArea >= CONFIG.nearThreshold) return CONFIG.minBlur;
+            if (faceArea <= CONFIG.farThreshold) return CONFIG.maxBlur;
+            ratio = (CONFIG.nearThreshold - faceArea) / (CONFIG.nearThreshold - CONFIG.farThreshold);
+        } else if (modeSettings.algorithm === 'blur_near') {
+            if (faceArea <= CONFIG.farThreshold) return CONFIG.minBlur;
+            if (faceArea > CONFIG.nearThreshold) return CONFIG.maxBlur;
+            ratio = (faceArea - CONFIG.farThreshold) / (CONFIG.nearThreshold - CONFIG.farThreshold);
+        } else if (modeSettings.algorithm === 'blur_outside_range') {
+            if (faceArea >= CONFIG.presbyopiaRangeMin && faceArea <= CONFIG.presbyopiaRangeMax) return CONFIG.minBlur;
+            if (faceArea < CONFIG.presbyopiaRangeMin) {
+                ratio = (CONFIG.presbyopiaRangeMin - faceArea) / (CONFIG.presbyopiaRangeMin / 1.5);
+            } else if (faceArea > CONFIG.presbyopiaRangeMax) {
+                ratio = (faceArea - CONFIG.presbyopiaRangeMax) / ((CONFIG.nearThreshold - CONFIG.presbyopiaRangeMax));
+            }
+        }
+        return CONFIG.minBlur + Math.max(0, Math.min(1, ratio)) * (CONFIG.maxBlur - CONFIG.minBlur);
+    }
+
+    function lerp(start, end, amt) { return (1 - amt) * start + amt * end; }
+
+    function applyVisuals(blurAmt, modeSettings) {
+        let filterStr = '';
+
+        if (modeSettings && modeSettings.type === 'color') {
+            if (modeSettings.filterId) {
+                filterStr = `url('${modeSettings.filterId}')`;
+            }
+        } else {
+            const roundedBlur = Math.round(blurAmt * 10) / 10;
+            filterStr = `blur(${roundedBlur}px)`;
+        }
+
+        if (filterStr !== lastFilterStr) {
+            canvasElement.style.filter = filterStr;
+            canvasElement.style.webkitFilter = filterStr;
+            lastFilterStr = filterStr;
+            blurDebug.innerText = blurAmt.toFixed(1);
+        }
+    }
+
+    // Hàm này CHỈ chạy khi có kết quả từ AI (tức là chỉ chạy ở chế độ Focus)
+    function onResults(results) {
+        if (canvasElement.width !== videoElement.videoWidth) {
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+        }
+
+        canvasCtx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+        const mode = MODES[currentModeKey];
+        let faceArea = 0;
+
+        if (results.detections.length > 0) {
+            warningElement.style.display = 'none';
+            const bbox = results.detections[0].boundingBox;
+            faceArea = bbox.width * bbox.height;
+        } else {
+            warningElement.style.display = 'block';
+        }
+        
+        if (mode.type === 'focus') {
+            if (results.detections.length > 0) {
+                targetBlur = calculateFocusBlur(faceArea, mode);
+            } else {
+                targetBlur = CONFIG.maxBlur;
+            }
+            currentBlur = lerp(currentBlur, targetBlur, CONFIG.smoothingFactor);
+            applyVisuals(currentBlur, null);
+        } else if (mode.type === 'none')  {
+            // Chế độ bình thường nhưng vẫn chạy qua AI để test
+             if (results.detections.length <= 0){
+                targetBlur = CONFIG.maxBlur;
+                currentBlur = lerp(currentBlur, targetBlur, CONFIG.smoothingFactor);
+                applyVisuals(currentBlur, null);
+            } else {
+                targetBlur = 0;
+                currentBlur = 0;
+                applyVisuals(0, null);
+            }
+        }
+    }
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            buttons.forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            currentModeKey = e.target.getAttribute('data-mode');
+            modeDebug.innerText = MODES[currentModeKey].label;
+            
+            lastFilterStr = ''; 
+            const mode = MODES[currentModeKey];
+            
+            // Nếu chuyển sang chế độ màu, ẩn ngay cảnh báo cũ
+            if (mode.type === 'color') {
+                 warningElement.style.display = 'none';
+                 applyVisuals(0, mode);
+            } else {
+                 applyVisuals(0, null);
+            }
+        });
+    });
+
+    const faceDetection = new FaceDetection({locateFile: (file) => 
+        `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`});
+    
+    faceDetection.setOptions({ 
+        model: 'short', 
+        minDetectionConfidence: 0.5,
+        selfieMode: false 
+    });
+    faceDetection.onResults(onResults);
+
+    const isMobile = window.innerWidth < 768; 
+    const camera = new Camera(videoElement, {
+        // --- LOGIC PHÂN LUỒNG QUAN TRỌNG ---
+        onFrame: async () => { 
+            const mode = MODES[currentModeKey];
+            
+            // Nếu là chế độ màu -> KHÔNG CHẠY AI, chỉ vẽ hình
+            if (mode.type === 'color') {
+                renderColorMode();
+            } 
+            // Nếu là chế độ Focus/None -> CHẠY AI
+            else {
+                await faceDetection.send({image: videoElement}); 
+            }
+        },
+        width: isMobile ? 1280 : 1920, 
+        height: isMobile ? 720 : 1080
+    });
+    camera.start();
+</script>
+</body>
+</html>

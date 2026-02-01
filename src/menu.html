@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>VISTA EYE - Trang Chủ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #0ea5e9;
+            --primary-dark: #0284c7;
+            --secondary-color: #00ff88;
+            --bg-gradient-start: #f0f9ff;
+            --bg-gradient-end: #e0f2fe;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary-color);
+        }
+
+        .brand-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            letter-spacing: 2px;
+        }
+
+        .tagline {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .welcome-text {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .welcome-text h2 {
+            font-size: 1.8rem;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+
+        .welcome-text p {
+            color: #64748b;
+            font-size: 1.1rem;
+            max-width: 500px;
+        }
+
+        /* Menu Options */
+        .menu-options {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .menu-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border: 2px solid transparent;
+        }
+
+        .menu-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-color: var(--primary-color);
+        }
+
+        .menu-card:active {
+            transform: translateY(-2px);
+        }
+
+        .card-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .card-icon.eye {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        }
+
+        .card-icon.camera {
+            background: linear-gradient(135deg, #00ff88, #10b981);
+        }
+
+        .card-content {
+            flex: 1;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .card-description {
+            font-size: 0.9rem;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        .card-arrow {
+            font-size: 1.5rem;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+
+        .menu-card:hover .card-arrow {
+            color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        /* Footer */
+        .footer {
+            background: white;
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 0.85rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .brand-name {
+                font-size: 1.5rem;
+            }
+
+            .welcome-text h2 {
+                font-size: 1.4rem;
+            }
+
+            .menu-card {
+                padding: 20px;
+            }
+
+            .card-icon {
+                width: 55px;
+                height: 55px;
+                font-size: 1.5rem;
+            }
+
+            .card-title {
+                font-size: 1rem;
+            }
+
+            .card-description {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .menu-card {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .menu-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .menu-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo-container">
+            <img 
+                src="https://res.cloudinary.com/dvucotc8z/image/upload/v1761407529/567696130_122104196085062997_7245508250228661975_n_nu6jbt.jpg" 
+                alt="Vista Eye Logo"
+                class="logo"
+            />
+            <span class="brand-name">VISTA EYE</span>
+        </div>
+        <p class="tagline">Hệ thống mô phỏng & hỗ trợ thị giác</p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="welcome-text">
+            <h2>Chào mừng bạn đến với VISTA EYE</h2>
+            <p>Vui lòng chọn chức năng bạn muốn sử dụng</p>
+        </div>
+
+        <div class="menu-options">
+            <!-- Option 1: Eye Simulation -->
+            <a href="index.html" class="menu-card">
+                <div class="card-icon eye">
+                    👁️
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Trải nghiệm mô phỏng tật về mắt</h3>
+                    <p class="card-description">Mô phỏng các tật khuyết thị giác như cận thị, loạn thị, mù màu và các bệnh lý về mắt khác.</p>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <!-- Option 2: Camera Capture -->
+            <a href="camera.html" class="menu-card">
+                <div class="card-icon camera">
+                    📸
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Camera lưu trữ khoảnh khắc</h3>
+                    <p class="card-description">Chụp và lưu trữ hình ảnh khoảnh khắc đáng nhớ của bạn lên hệ thống cloud.</p>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2025 VISTA EYE - Hệ thống mô phỏng tật khuyết thị giác</p>
+    </footer>
+</body>
+</html>
