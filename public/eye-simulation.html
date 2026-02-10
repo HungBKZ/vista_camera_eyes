@@ -650,10 +650,14 @@
 
     buttons.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            buttons.forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
+            // Sử dụng closest để lấy button, vì e.target có thể là span con
+            const clickedBtn = e.target.closest('button[data-mode]');
+            if (!clickedBtn) return;
             
-            currentModeKey = e.target.getAttribute('data-mode');
+            buttons.forEach(b => b.classList.remove('active'));
+            clickedBtn.classList.add('active');
+            
+            currentModeKey = clickedBtn.getAttribute('data-mode');
             modeDebug.innerText = t(MODES[currentModeKey].labelKey);
             
             lastFilterStr = ''; 
