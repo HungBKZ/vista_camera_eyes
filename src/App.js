@@ -118,7 +118,13 @@ function App() {
   const [currentPage, setCurrentPage] = useState('menu');
 
   if (currentPage === 'camera') {
-    return <CameraPage onBack={() => setCurrentPage('menu')} />;
+    return (
+      <CameraPage
+        onBack={() => {
+          window.location.href = 'https://vistapatientjourney.vercel.app/knowledge';
+        }}
+      />
+    );
   }
 
   return <Menu onSelectOption={setCurrentPage} />;

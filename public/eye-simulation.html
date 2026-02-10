@@ -65,7 +65,7 @@
             padding: 12px 15px; border-radius: 12px;
             z-index: 100;
             border: 1px solid rgba(255,255,255,0.15);
-            width: 90%; max-width: 650px;
+            width: 92%; max-width: 900px;
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 
@@ -75,7 +75,7 @@
         }
 
         .mode-groups { display: flex; flex-direction: column; gap: 10px; }
-        .button-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .button-row { display: flex; flex-wrap: nowrap; gap: 8px; justify-content: center; }
 
         button {
             background: rgba(255,255,255,0.1);
@@ -84,6 +84,9 @@
             cursor: pointer; font-size: 0.8rem; 
             /* Chống double-tap zoom trên iOS */
             touch-action: manipulation; 
+            flex: 1 1 0;
+            min-width: 0;
+            white-space: nowrap;
         }
         button.active {
             background: var(--primary-color); color: #000; font-weight: bold; border-color: var(--primary-color);
@@ -97,6 +100,38 @@
             /* Đẩy xuống khỏi tai thỏ nếu cần */
             top: max(20px, env(safe-area-inset-top)); 
         }
+
+        /* Language dropdown */
+        .lang-select {
+            position: absolute;
+            right: 20px;
+            top: calc(max(20px, env(safe-area-inset-top)) + 54px);
+            z-index: 102;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .lang-select label {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            font-weight: 700;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 10px;
+            border-radius: 8px;
+        }
+        .lang-select select {
+            background: rgba(0,0,0,0.75);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.25);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .lang-select select:focus { outline: none; border-color: rgba(255,255,255,0.45); }
 
         /* Back button */
         .back-btn {
@@ -153,6 +188,7 @@
                 /* Đẩy sát xuống dưới hơn chút để tiết kiệm diện tích */
                 bottom: calc(15px + env(safe-area-inset-bottom)); 
             }
+            .button-row { flex-wrap: wrap; }
             button {
                 padding: 6px 10px; /* Nút nhỏ hơn chút */
                 font-size: 0.75rem;
@@ -162,6 +198,13 @@
                 font-size: 0.65rem;
                 padding: 5px;
             }
+            .lang-select {
+                right: max(20px, env(safe-area-inset-right));
+                top: calc(max(20px, env(safe-area-inset-top)) + 52px);
+                gap: 6px;
+            }
+            .lang-select label { padding: 6px 8px; font-size: 0.7rem; }
+            .lang-select select { padding: 6px 10px; font-size: 0.8rem; }
         }
 
         .svg-filters { position: absolute; left: -9999px; top: -9999px; width: 0; height: 0; }
@@ -179,7 +222,16 @@
 
     <div class="viewport-container">
         <!-- Back button -->
-        <a href="/" class="back-btn">← Quay lại</a>
+        <a href="https://vistapatientjourney.vercel.app/knowledge" class="back-btn" id="back-btn">← Quay lại</a>
+
+        <!-- Language dropdown -->
+        <div class="lang-select">
+            <label id="lang-label" for="lang-select">Ngôn ngữ</label>
+            <select id="lang-select">
+                <option value="vi">VN</option>
+                <option value="en">ENG</option>
+            </select>
+        </div>
 
         <div class="media-wrapper">
             <video id="input_video" playsinline muted autoplay></video>
@@ -187,29 +239,29 @@
             
             <div id="no-face-warning" class="warning-overlay">
                 <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
-                <div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 5px;">KHÔNG TÌM THẤY MẶT</div>
-                <div style="font-size: 0.8rem; opacity: 0.9;">Di chuyển vào khung hình</div>
+                <div id="warning-title" style="font-size: 1.1rem; font-weight: bold; margin-bottom: 5px;">KHÔNG TÌM THẤY MẶT</div>
+                <div id="warning-hint" style="font-size: 0.8rem; opacity: 0.9;">Di chuyển vào khung hình</div>
             </div>
         </div>
 
         <div class="status-indicator">
-            Mode: <span id="mode-debug" style="color:var(--primary-color)">Normal</span><br>
-            Blur: <span id="blur-debug">0.0</span>px
+            <span id="mode-label">Mode</span>: <span id="mode-debug" style="color:var(--primary-color)">Normal</span><br>
+            <span id="blur-label">Blur</span>: <span id="blur-debug">0.0</span><span id="blur-unit">px</span>
         </div>
 
         <div class="control-panel">
             <div class="mode-groups">
                 <div class="button-row">
-                    <button class="active" data-mode="normal">Bình thường</button>
-                    <button data-mode="myopia">Cận thị</button>
-                    <button data-mode="hyperopia">Viễn thị</button>
-                    <button data-mode="presbyopia">Lão thị</button>
+                    <button class="active" data-mode="normal">Emmetropia (chính thị)</button>
+                    <button data-mode="myopia">Myopia (cận thị)</button>
+                    <button data-mode="hyperopia">Hyperopia (viễn thị)</button>
+                    <button data-mode="presbyopia">Presbyopia (lão thị)</button>
                 </div>
                 <div class="button-row">
-                    <button data-mode="protanopia">Mù đỏ</button>
-                    <button data-mode="deuteranopia">Mù xanh lá</button>
-                    <button data-mode="tritanopia">Mù xanh dương</button>
-                    <button data-mode="achromatopsia">Mù hoàn toàn</button>
+                    <button data-mode="protanopia">Protanopia (đỏ)</button>
+                    <button data-mode="deuteranopia">Deuteranopia (lục)</button>
+                    <button data-mode="tritanopia">Tritanopia (lam)</button>
+                    <button data-mode="achromatopsia">Achromatopsia (toàn phần)</button>
                 </div>
             </div>
         </div>
@@ -223,6 +275,52 @@
     const modeDebug = document.getElementById('mode-debug');
     const buttons = document.querySelectorAll('button[data-mode]');
     const warningElement = document.getElementById('no-face-warning');
+    const backBtn = document.getElementById('back-btn');
+    const langLabelEl = document.getElementById('lang-label');
+    const langSelectEl = document.getElementById('lang-select');
+
+    const LANG_STORAGE_KEY = 'see_beyond_lang';
+    let currentLang = (localStorage.getItem(LANG_STORAGE_KEY) || 'vi').toLowerCase();
+    if (currentLang !== 'vi' && currentLang !== 'en') currentLang = 'vi';
+
+    const I18N = {
+        vi: {
+            'ui.back': '← Quay lại',
+            'ui.mode': 'Chế độ',
+            'ui.blur': 'Mờ',
+            'ui.language': 'Ngôn ngữ',
+            'ui.noFaceTitle': 'KHÔNG TÌM THẤY MẶT',
+            'ui.noFaceHint': 'Di chuyển vào khung hình',
+            'mode.normal': 'Emmetropia (chính thị)',
+            'mode.myopia': 'Myopia (cận thị)',
+            'mode.hyperopia': 'Hyperopia (viễn thị)',
+            'mode.presbyopia': 'Presbyopia (lão thị)',
+            'mode.protanopia': 'Protanopia (đỏ)',
+            'mode.deuteranopia': 'Deuteranopia (lục)',
+            'mode.tritanopia': 'Tritanopia (lam)',
+            'mode.achromatopsia': 'Achromatopsia (toàn phần)',
+        },
+        en: {
+            'ui.back': '← Back',
+            'ui.mode': 'Mode',
+            'ui.blur': 'Blur',
+            'ui.language': 'Language',
+            'ui.noFaceTitle': 'FACE NOT DETECTED',
+            'ui.noFaceHint': 'Move into the frame',
+            'mode.normal': 'Emmetropia (normal vision)',
+            'mode.myopia': 'Myopia (nearsightedness)',
+            'mode.hyperopia': 'Hyperopia (farsightedness)',
+            'mode.presbyopia': 'Presbyopia (age-related)',
+            'mode.protanopia': 'Protanopia (red)',
+            'mode.deuteranopia': 'Deuteranopia (green)',
+            'mode.tritanopia': 'Tritanopia (blue)',
+            'mode.achromatopsia': 'Achromatopsia (total)',
+        }
+    };
+
+    function t(key) {
+        return (I18N[currentLang] && I18N[currentLang][key]) || (I18N.vi && I18N.vi[key]) || key;
+    }
 
     const CONFIG = {
         minBlur: 0, maxBlur: 18, smoothingFactor: 0.15,
@@ -231,20 +329,59 @@
     };
 
     const MODES = {
-        'normal': { type: 'none', label: 'Bình thường' },
-        'myopia': { type: 'focus', algorithm: 'blur_far', label: 'Cận thị' },
-        'hyperopia': { type: 'focus', algorithm: 'blur_near', label: 'Viễn thị' },
-        'presbyopia': { type: 'focus', algorithm: 'blur_outside_range', label: 'Lão thị' },
-        'protanopia': { type: 'color', filterId: '#protanopiaFilter', label: 'Protanopia' },
-        'deuteranopia': { type: 'color', filterId: '#deuteranopiaFilter', label: 'Deuteranopia' },
-        'tritanopia': { type: 'color', filterId: '#tritanopiaFilter', label: 'Tritanopia' },
-        'achromatopsia': { type: 'color', filterId: '#achromatopsiaFilter', label: 'Achromatopsia' },
+        'normal': { type: 'none', labelKey: 'mode.normal' },
+        'myopia': { type: 'focus', algorithm: 'blur_far', labelKey: 'mode.myopia' },
+        'hyperopia': { type: 'focus', algorithm: 'blur_near', labelKey: 'mode.hyperopia' },
+        'presbyopia': { type: 'focus', algorithm: 'blur_outside_range', labelKey: 'mode.presbyopia' },
+        'protanopia': { type: 'color', filterId: '#protanopiaFilter', labelKey: 'mode.protanopia' },
+        'deuteranopia': { type: 'color', filterId: '#deuteranopiaFilter', labelKey: 'mode.deuteranopia' },
+        'tritanopia': { type: 'color', filterId: '#tritanopiaFilter', labelKey: 'mode.tritanopia' },
+        'achromatopsia': { type: 'color', filterId: '#achromatopsiaFilter', labelKey: 'mode.achromatopsia' },
     };
 
     let currentModeKey = 'normal';
     let currentBlur = 0;
     let targetBlur = 0;
     let lastFilterStr = ''; 
+
+    function applyTranslations() {
+        document.documentElement.lang = currentLang;
+
+        const modeLabelEl = document.getElementById('mode-label');
+        const blurLabelEl = document.getElementById('blur-label');
+        const warningTitleEl = document.getElementById('warning-title');
+        const warningHintEl = document.getElementById('warning-hint');
+
+        if (backBtn) backBtn.textContent = t('ui.back');
+        if (modeLabelEl) modeLabelEl.textContent = t('ui.mode');
+        if (blurLabelEl) blurLabelEl.textContent = t('ui.blur');
+        if (langLabelEl) langLabelEl.textContent = t('ui.language');
+        if (warningTitleEl) warningTitleEl.textContent = t('ui.noFaceTitle');
+        if (warningHintEl) warningHintEl.textContent = t('ui.noFaceHint');
+
+        buttons.forEach(btn => {
+            const key = btn.getAttribute('data-mode');
+            btn.textContent = t(`mode.${key}`);
+        });
+
+        const mode = MODES[currentModeKey];
+        if (mode && mode.labelKey) modeDebug.innerText = t(mode.labelKey);
+
+        if (langSelectEl && langSelectEl.value !== currentLang) {
+            langSelectEl.value = currentLang;
+        }
+    }
+
+    if (langSelectEl) {
+        langSelectEl.addEventListener('change', (e) => {
+            const next = String(e.target.value || '').toLowerCase();
+            if (next === 'vi' || next === 'en') {
+                currentLang = next;
+                localStorage.setItem(LANG_STORAGE_KEY, currentLang);
+                applyTranslations();
+            }
+        });
+    }
 
     // Hàm vẽ video lên canvas (cho chế độ màu - không AI)
     function renderColorMode() {
@@ -354,7 +491,7 @@
             e.target.classList.add('active');
             
             currentModeKey = e.target.getAttribute('data-mode');
-            modeDebug.innerText = MODES[currentModeKey].label;
+            modeDebug.innerText = t(MODES[currentModeKey].labelKey);
             
             lastFilterStr = ''; 
             const mode = MODES[currentModeKey];
@@ -398,6 +535,9 @@
         height: isMobile ? 720 : 1080
     });
     camera.start();
+
+    // Initial i18n sync (after listeners are bound)
+    applyTranslations();
 </script>
 </body>
 </html>
