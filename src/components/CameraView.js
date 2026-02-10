@@ -398,7 +398,7 @@ const isPointInNumberPath = (px, py, rects) => {
   return false;
 };
 
-export default function CameraView() {
+export default function CameraView({ lang = 'vi', setLang }) {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
   const ishiharaCanvasRef = useRef(null); // Canvas cho Ishihara plates
@@ -438,10 +438,107 @@ export default function CameraView() {
     astigmatism: 0,   // Loan thi (0 den -6.00)
     axis: 0,          // Truc loan thi (0-180 do)
   });
-  const [showVisionPanel, setShowVisionPanel] = useState(false);
+  const [showVisionPanel, setShowVisionPanel] = useState(true);
 
   // TINH NANG MOI: TAB NAVIGATION (for mobile)
   const [activeTab, setActiveTab] = useState('effects'); // effects, glasses, tools
+
+  // i18n (VI/EN) - medical labels
+  const STRINGS = {
+    vi: {
+      'ui.language': 'Ngôn ngữ',
+      'intro.title': 'Mô phỏng tật khuyết mắt',
+      'intro.desc': 'Trải nghiệm góc nhìn của người có các vấn đề về thị lực để hiểu hơn về bệnh lý mắt.',
+      'tab.effects': 'Thị giác',
+      'tab.glasses': 'Thử kính',
+      'tab.tools': 'Kiểm tra mù màu',
+      'glasses.showTitle': 'Hiển thị mắt kính',
+      'glasses.showDesc': 'Bật để thử kính trên khuôn mặt',
+      'glasses.choose': 'Chọn kiểu kính',
+      'glasses.auto': 'Tự động',
+      'glasses.manual': 'Thủ công',
+      'effects.choose': 'Chọn loại tật khuyết',
+      'filter.none': 'Chính thị (Emmetropia)',
+      'filter.colorblind': 'Rối loạn sắc giác',
+      'filter.nearsighted': 'Cận thị (Myopia)',
+      'filter.farsighted': 'Viễn thị (Hyperopia)',
+      'filter.cataract': 'Đục thủy tinh thể (Cataract)',
+      'filter.glaucoma': 'Glaucoma',
+      'vision.panel': 'Điều chỉnh độ khúc xạ',
+      'vision.myopia': 'Cận thị (Myopia)',
+      'vision.hyperopia': 'Viễn thị (Hyperopia)',
+      'vision.astig': 'Loạn thị (Astigmatism)',
+      'vision.reset': 'Đặt lại mặc định',
+      'tools.title': 'Kiểm tra mù màu',
+      'tools.ishihara': 'Test Ishihara',
+      'tools.gallery': 'Bộ sưu tập ảnh',
+      'modal.ishiharaTitle': 'Test Ishihara',
+      'modal.medical': 'Chuẩn nhãn khoa',
+      'modal.progress': 'Tiến độ',
+      'camera.detected': 'Phát hiện',
+      'camera.faces': 'khuôn mặt',
+      'camera.distance': 'Khoảng cách',
+      'camera.near': 'Gần',
+      'camera.mid': 'TB',
+      'camera.far': 'Xa',
+      'camera.blur': 'Mờ',
+      'toast.saved': 'Đã lưu thành công',
+      'action.gallery': 'Bộ sưu tập',
+      'action.capture': 'Chụp ảnh',
+      'action.glassesOn': 'Bật kính',
+      'action.glassesOff': 'Tắt kính',
+    },
+    en: {
+      'ui.language': 'Language',
+      'intro.title': 'Vision Simulation',
+      'intro.desc': 'Experience how vision conditions affect sight.',
+      'tab.effects': 'Vision',
+      'tab.glasses': 'Try Glasses',
+      'tab.tools': 'Color Vision Test',
+      'glasses.showTitle': 'Show glasses overlay',
+      'glasses.showDesc': 'Enable to try glasses on your face',
+      'glasses.choose': 'Choose frames',
+      'glasses.auto': 'Auto',
+      'glasses.manual': 'Manual',
+      'effects.choose': 'Select condition',
+      'filter.none': 'Emmetropia (normal vision)',
+      'filter.colorblind': 'Color vision deficiency',
+      'filter.nearsighted': 'Myopia (nearsightedness)',
+      'filter.farsighted': 'Hyperopia (farsightedness)',
+      'filter.cataract': 'Cataract',
+      'filter.glaucoma': 'Glaucoma',
+      'vision.panel': 'Refraction adjustment',
+      'vision.myopia': 'Myopia',
+      'vision.hyperopia': 'Hyperopia',
+      'vision.astig': 'Astigmatism',
+      'vision.reset': 'Reset to default',
+      'tools.title': 'Color vision test',
+      'tools.ishihara': 'Ishihara test',
+      'tools.gallery': 'Photo gallery',
+      'modal.ishiharaTitle': 'Ishihara test',
+      'modal.medical': 'Medical standard',
+      'modal.progress': 'Progress',
+      'camera.detected': 'Detected',
+      'camera.faces': 'faces',
+      'camera.distance': 'Distance',
+      'camera.near': 'Near',
+      'camera.mid': 'Mid',
+      'camera.far': 'Far',
+      'camera.blur': 'Blur',
+      'toast.saved': 'Saved successfully',
+      'action.gallery': 'Gallery',
+      'action.capture': 'Capture',
+      'action.glassesOn': 'Enable glasses',
+      'action.glassesOff': 'Disable glasses',
+    },
+  };
+
+  const t = useCallback(
+    (key, fallback) => {
+      return STRINGS[lang]?.[key] ?? STRINGS.vi[key] ?? fallback ?? key;
+    },
+    [lang]
+  );
 
 
 
@@ -1219,14 +1316,14 @@ export default function CameraView() {
   return (
     <div className="flex flex-col w-full min-h-screen bg-sky-50">
       {/* MAIN LAYOUT - Responsive */}
-      <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-5 w-full p-2 sm:p-3 md:p-5 lg:p-6 max-w-[1280px] mx-auto">
+      <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-5 w-full p-2 sm:p-3 md:p-5 lg:p-6 max-w-[1400px] mx-auto">
         
         {/* CAMERA SECTION */}
         <div className="w-full lg:flex-1">
           {/* Camera Container */}
           <div className="relative rounded-xl overflow-hidden shadow-lg bg-black border border-gray-200">
             {/* Aspect ratio container - portrait on mobile, landscape on desktop */}
-            <div className="relative w-full aspect-[3/4] sm:aspect-[4/3]">
+            <div className="relative w-full aspect-[3/4] sm:aspect-[5/4]">
               <Webcam
                 ref={webcamRef}
                 mirrored={false}
@@ -1256,7 +1353,7 @@ export default function CameraView() {
                 )}
                 {detectedFaces > 0 && (
                   <div className="bg-black/60 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 rounded font-medium ml-auto">
-                    Phát hiện: {detectedFaces} khuôn mặt
+                    {t('camera.detected')}: {detectedFaces} {t('camera.faces')}
                   </div>
                 )}
               </div>
@@ -1267,7 +1364,7 @@ export default function CameraView() {
                   <div className="bg-black/70 text-white px-3 py-2 rounded-lg text-xs flex items-center gap-2">
                     <div className="flex items-center gap-1">
                       <span>📏</span>
-                      <span>Khoảng cách:</span>
+                      <span>{t('camera.distance')}:</span>
                     </div>
                     <div className="flex items-center gap-1">
                       {/* Distance bar */}
@@ -1282,14 +1379,14 @@ export default function CameraView() {
                         />
                       </div>
                       <span className="font-medium w-8">
-                        {faceDistance < 0.3 ? 'Gần' : faceDistance < 0.7 ? 'TB' : 'Xa'}
+                        {faceDistance < 0.3 ? t('camera.near') : faceDistance < 0.7 ? t('camera.mid') : t('camera.far')}
                       </span>
                     </div>
                     {/* Blur indicator */}
                     <div className="text-[10px] text-white/70 ml-1">
                       {filter === "nearsighted" 
-                        ? `Mờ: ${Math.round(faceDistance * 100)}%`
-                        : `Mờ: ${Math.round((1 - faceDistance) * 100)}%`
+                        ? `${t('camera.blur')}: ${Math.round(faceDistance * 100)}%`
+                        : `${t('camera.blur')}: ${Math.round((1 - faceDistance) * 100)}%`
                       }
                     </div>
                   </div>
@@ -1299,7 +1396,7 @@ export default function CameraView() {
               {/* Success Toast */}
               {captureSuccess && (
                 <div className="absolute top-12 md:top-14 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded shadow-lg text-xs md:text-sm font-medium">
-                  Đã lưu thành công
+                  {t('toast.saved')}
                 </div>
               )}
 
@@ -1312,7 +1409,7 @@ export default function CameraView() {
                   <button
                     onClick={() => setShowGallery(true)}
                     className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all"
-                    title="Bộ sưu tập"
+                    title={t('action.gallery')}
                   >
                     <span className="text-xs font-medium">{gallery.length}</span>
                   </button>
@@ -1322,7 +1419,7 @@ export default function CameraView() {
                     onClick={capture}
                     disabled={loading}
                     className="w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-50"
-                    title="Chụp ảnh"
+                    title={t('action.capture')}
                   >
                     {loading ? (
                       <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-800 rounded-full animate-spin" />
@@ -1337,7 +1434,7 @@ export default function CameraView() {
                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                       glassesEnabled ? 'bg-white/30 text-white ring-2 ring-white/70' : 'bg-white/10 text-white hover:bg-white/20'
                     }`}
-                    title={glassesEnabled ? 'Tắt kính' : 'Bật kính'}
+                    title={glassesEnabled ? t('action.glassesOff') : t('action.glassesOn')}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1352,21 +1449,18 @@ export default function CameraView() {
 
         {/* CONTROL PANEL */}
         <div className="w-full lg:w-[320px] flex-shrink-0 space-y-3 sm:space-y-4">
-          
           {/* INTRO CARD - Hidden on mobile to save space */}
           <div className="hidden sm:block bg-sky-500 rounded-xl p-4 text-white">
-            <h2 className="text-sm md:text-base font-semibold mb-1">Mô phỏng tật khuyết mắt</h2>
-            <p className="text-xs text-sky-100 leading-relaxed">
-              Trải nghiệm góc nhìn của người có các vấn đề về thị lực để hiểu hơn về bệnh lý mắt.
-            </p>
+            <h2 className="text-sm md:text-base font-semibold mb-1">{t('intro.title')}</h2>
+            <p className="text-xs text-sky-100 leading-relaxed">{t('intro.desc')}</p>
           </div>
 
           {/* TAB NAVIGATION */}
           <div className="bg-white rounded-xl shadow border border-sky-200 p-1 flex sticky top-2 z-10">
             {[
-              { id: 'effects', label: 'Thị giác', icon: '👁️' },
-              { id: 'glasses', label: 'Thử kính', icon: '👓' },
-              { id: 'tools', label: 'Công cụ', icon: '🔧' },
+              { id: 'effects', label: t('tab.effects'), icon: '👁️' },
+              { id: 'glasses', label: t('tab.glasses'), icon: '👓' },
+              { id: 'tools', label: t('tab.tools'), icon: '🔧' },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -1392,8 +1486,8 @@ export default function CameraView() {
               <div className="bg-white rounded-xl shadow border border-sky-200 p-3 sm:p-4 mb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-sky-700">Hiển thị mắt kính</h3>
-                    <p className="text-xs text-sky-500">Bật để thử kính trên khuôn mặt</p>
+                    <h3 className="text-sm font-medium text-sky-700">{t('glasses.showTitle')}</h3>
+                    <p className="text-xs text-sky-500">{t('glasses.showDesc')}</p>
                   </div>
                   <button
                     onClick={() => setGlassesEnabled(!glassesEnabled)}
@@ -1411,14 +1505,14 @@ export default function CameraView() {
               {/* Glasses Grid */}
               <div className={`bg-white rounded-xl shadow border border-sky-200 p-3 sm:p-4 transition-opacity ${glassesEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium text-sky-700">Chọn kiểu kính</h3>
+                  <h3 className="text-sm font-medium text-sky-700">{t('glasses.choose')}</h3>
                   <button
                     onClick={() => setAutoMode(!autoMode)}
                     className={`text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                       autoMode ? 'bg-sky-100 text-sky-600' : 'bg-sky-50 text-sky-400'
                     }`}
                   >
-                    {autoMode ? 'Tự động' : 'Thủ công'}
+                    {autoMode ? t('glasses.auto') : t('glasses.manual')}
                   </button>
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -1443,15 +1537,15 @@ export default function CameraView() {
             <div className={`${activeTab === 'effects' ? 'block' : 'hidden'}`}>
               {/* Vision Filters */}
               <div className="bg-white rounded-xl shadow border border-sky-200 p-3 sm:p-4">
-                <h3 className="text-sm font-medium text-sky-700 mb-3">Chọn loại tật khuyết</h3>
+                <h3 className="text-sm font-medium text-sky-700 mb-3">{t('effects.choose')}</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: "none", label: "Bình thường", icon: "✓" },
-                    { value: "colorblind", label: "Mù màu", icon: "🎨" },
-                    { value: "nearsighted", label: "Cận thị", icon: "👀" },
-                    { value: "farsighted", label: "Viễn thị", icon: "🔍" },
-                    { value: "cataract", label: "Đục thủy tinh thể", icon: "☁️" },
-                    { value: "glaucoma", label: "Glaucoma", icon: "⭕" },
+                    { value: "none", label: t('filter.none'), icon: "✓" },
+                    { value: "colorblind", label: t('filter.colorblind'), icon: "🎨" },
+                    { value: "nearsighted", label: t('filter.nearsighted'), icon: "👀" },
+                    { value: "farsighted", label: t('filter.farsighted'), icon: "🔍" },
+                    { value: "cataract", label: t('filter.cataract'), icon: "☁️" },
+                    { value: "glaucoma", label: t('filter.glaucoma'), icon: "⭕" },
                   ].map((f) => (
                     <button
                       key={f.value}
@@ -1475,7 +1569,7 @@ export default function CameraView() {
                   onClick={() => setShowVisionPanel(!showVisionPanel)}
                   className="w-full p-3 sm:p-4 flex items-center justify-between hover:bg-sky-50 active:bg-sky-100"
                 >
-                  <span className="text-sm font-medium text-sky-700">Điều chỉnh độ khúc xạ</span>
+                  <span className="text-sm font-medium text-sky-700">{t('vision.panel')}</span>
                   <svg className={`w-4 h-4 text-sky-400 transition-transform ${showVisionPanel ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -1484,7 +1578,7 @@ export default function CameraView() {
                   <div className="px-3 sm:px-4 pb-4 space-y-4 border-t border-sky-100">
                     <div className="pt-3">
                       <div className="flex justify-between text-xs mb-2">
-                        <span className="text-sky-600">Cận thị (Myopia)</span>
+                        <span className="text-sky-600">{t('vision.myopia')}</span>
                         <span className="font-mono font-medium text-sky-700">{visionSettings.myopia}D</span>
                       </div>
                       <input
@@ -1496,7 +1590,7 @@ export default function CameraView() {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-2">
-                        <span className="text-sky-600">Viễn thị (Hyperopia)</span>
+                        <span className="text-sky-600">{t('vision.hyperopia')}</span>
                         <span className="font-mono font-medium text-sky-700">+{visionSettings.hyperopia}D</span>
                       </div>
                       <input
@@ -1508,7 +1602,7 @@ export default function CameraView() {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-2">
-                        <span className="text-sky-600">Loạn thị (Astigmatism)</span>
+                        <span className="text-sky-600">{t('vision.astig')}</span>
                         <span className="font-mono font-medium text-sky-700">{visionSettings.astigmatism}D</span>
                       </div>
                       <input
@@ -1522,7 +1616,7 @@ export default function CameraView() {
                       onClick={() => setVisionSettings({ myopia: 0, hyperopia: 0, astigmatism: 0, axis: 0 })}
                       className="w-full py-2.5 bg-sky-100 hover:bg-sky-200 active:bg-sky-300 rounded-lg text-xs font-medium text-sky-600 transition-all"
                     >
-                      Đặt lại mặc định
+                      {t('vision.reset')}
                     </button>
                   </div>
                 )}
@@ -1535,21 +1629,21 @@ export default function CameraView() {
             <div className={`${activeTab === 'tools' ? 'block' : 'hidden'}`}>
               {/* Quick Actions */}
               <div className="bg-white rounded-xl shadow border border-sky-200 p-3 sm:p-4">
-                <h3 className="text-sm font-medium text-sky-700 mb-3">Công cụ hỗ trợ</h3>
+                <h3 className="text-sm font-medium text-sky-700 mb-3">{t('tools.title')}</h3>
                 <div className="space-y-2">
                   <button
                     onClick={startColorTest}
                     className="w-full bg-sky-500 hover:bg-sky-400 active:bg-sky-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-2"
                   >
                     <span>🔴</span>
-                    <span>Test mù màu Ishihara</span>
+                    <span>{t('tools.ishihara')}</span>
                   </button>
                   <button
                     onClick={() => setShowGallery(true)}
                     className="w-full bg-sky-100 hover:bg-sky-200 active:bg-sky-300 text-sky-600 py-3 px-4 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-2"
                   >
                     <span>📷</span>
-                    <span>Bộ sưu tập ảnh ({gallery.length})</span>
+                    <span>{t('tools.gallery')} ({gallery.length})</span>
                   </button>
                 </div>
               </div>
@@ -1566,9 +1660,9 @@ export default function CameraView() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-800">
-                  Test Mù Màu Ishihara
+                  {t('modal.ishiharaTitle')}
                 </h2>
-                <p className="text-xs text-gray-500">Chuẩn y khoa quốc tế</p>
+                <p className="text-xs text-gray-500">{t('modal.medical')}</p>
               </div>
               <button
                 onClick={() => setShowColorTest(false)}
@@ -1583,7 +1677,7 @@ export default function CameraView() {
                 {/* Progress */}
                 <div className="mb-4">
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-600">Tiến độ</span>
+                    <span className="text-gray-600">{t('modal.progress')}</span>
                     <span className="font-medium text-sky-600">
                       {colorTestIndex + 1} / {ishiharaPlates.length}
                     </span>
