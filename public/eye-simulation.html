@@ -87,7 +87,11 @@
             flex: 1 1 0;
             min-width: 0;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
+        button .short-label { display: none; }
+        button .full-label { display: inline; }
         button.active {
             background: var(--primary-color); color: #000; font-weight: bold; border-color: var(--primary-color);
         }
@@ -183,28 +187,142 @@
         /* FIX 3: Responsive cho màn hình nhỏ (Mobile) */
         @media (max-width: 600px) {
             .control-panel {
-                width: 95%; /* Rộng hơn chút trên đt */
+                width: 95%;
                 padding: 10px;
-                /* Đẩy sát xuống dưới hơn chút để tiết kiệm diện tích */
                 bottom: calc(15px + env(safe-area-inset-bottom)); 
             }
-            .button-row { flex-wrap: wrap; }
-            button {
-                padding: 6px 10px; /* Nút nhỏ hơn chút */
-                font-size: 0.75rem;
+            .button-row { 
+                flex-wrap: wrap; 
+                gap: 6px;
             }
-            .mode-groups { gap: 6px; }
+            button {
+                padding: 8px 10px;
+                font-size: 0.7rem;
+                flex: 1 1 calc(50% - 4px); /* 2 cột trên mobile */
+                min-width: calc(50% - 4px);
+                line-height: 1.2;
+                white-space: normal; /* Cho phép xuống dòng */
+            }
+            /* Hiển thị tên ngắn trên mobile */
+            button .short-label { display: inline; }
+            button .full-label { display: none; }
+            .mode-groups { gap: 8px; }
             .status-indicator {
                 font-size: 0.65rem;
                 padding: 5px;
             }
             .lang-select {
-                right: max(20px, env(safe-area-inset-right));
-                top: calc(max(20px, env(safe-area-inset-top)) + 52px);
-                gap: 6px;
+                right: max(10px, env(safe-area-inset-right));
+                top: calc(max(15px, env(safe-area-inset-top)) + 50px);
+                gap: 5px;
             }
-            .lang-select label { padding: 6px 8px; font-size: 0.7rem; }
-            .lang-select select { padding: 6px 10px; font-size: 0.8rem; }
+            .lang-select label { padding: 6px 8px; font-size: 0.65rem; }
+            .lang-select select { padding: 6px 8px; font-size: 0.75rem; }
+            .back-btn {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Màn hình rất nhỏ (< 400px) */
+        @media (max-width: 400px) {
+            .control-panel {
+                width: 98%;
+                padding: 8px;
+                border-radius: 10px;
+            }
+            button {
+                padding: 7px 6px;
+                font-size: 0.65rem;
+                flex: 1 1 calc(50% - 3px);
+            }
+            .mode-groups { gap: 6px; }
+            .button-row { gap: 4px; }
+            .status-indicator {
+                font-size: 0.6rem;
+                padding: 4px;
+                right: 10px;
+            }
+            .back-btn {
+                padding: 6px 10px;
+                font-size: 0.75rem;
+                left: max(10px, env(safe-area-inset-left));
+            }
+            .lang-select {
+                right: max(8px, env(safe-area-inset-right));
+                top: calc(max(12px, env(safe-area-inset-top)) + 45px);
+            }
+            .lang-select label { 
+                padding: 5px 6px; 
+                font-size: 0.6rem; 
+            }
+            .lang-select select { 
+                padding: 5px 6px; 
+                font-size: 0.7rem; 
+            }
+            .warning-overlay {
+                width: 85%;
+                padding: 15px 20px;
+            }
+            .warning-overlay div:first-child { font-size: 1.5rem; }
+            #warning-title { font-size: 0.95rem !important; }
+            #warning-hint { font-size: 0.7rem !important; }
+        }
+
+        /* Landscape orientation trên mobile */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .control-panel {
+                width: 70%;
+                max-width: 600px;
+                padding: 8px 12px;
+                bottom: calc(8px + env(safe-area-inset-bottom));
+            }
+            button {
+                padding: 5px 8px;
+                font-size: 0.65rem;
+                flex: 1 1 auto;
+            }
+            .mode-groups { 
+                flex-direction: row; 
+                gap: 8px; 
+            }
+            .button-row { 
+                flex: 1;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .status-indicator {
+                font-size: 0.6rem;
+                padding: 4px;
+                top: max(8px, env(safe-area-inset-top));
+                right: max(8px, env(safe-area-inset-right));
+            }
+            .back-btn {
+                padding: 6px 10px;
+                font-size: 0.7rem;
+                top: max(8px, env(safe-area-inset-top));
+            }
+            .lang-select {
+                top: calc(max(8px, env(safe-area-inset-top)) + 35px);
+                right: max(8px, env(safe-area-inset-right));
+            }
+            .lang-select label { padding: 4px 6px; font-size: 0.6rem; }
+            .lang-select select { padding: 4px 6px; font-size: 0.65rem; }
+            .warning-overlay {
+                width: 50%;
+                padding: 12px 15px;
+            }
+        }
+
+        /* Màn hình lớn hơn (tablet) */
+        @media (min-width: 601px) and (max-width: 900px) {
+            .control-panel {
+                width: 90%;
+            }
+            button {
+                padding: 10px 14px;
+                font-size: 0.85rem;
+            }
         }
 
         .svg-filters { position: absolute; left: -9999px; top: -9999px; width: 0; height: 0; }
@@ -252,16 +370,40 @@
         <div class="control-panel">
             <div class="mode-groups">
                 <div class="button-row">
-                    <button class="active" data-mode="normal">Emmetropia (chính thị)</button>
-                    <button data-mode="myopia">Myopia (cận thị)</button>
-                    <button data-mode="hyperopia">Hyperopia (viễn thị)</button>
-                    <button data-mode="presbyopia">Presbyopia (lão thị)</button>
+                    <button class="active" data-mode="normal">
+                        <span class="full-label">Emmetropia (chính thị)</span>
+                        <span class="short-label">Chính thị</span>
+                    </button>
+                    <button data-mode="myopia">
+                        <span class="full-label">Myopia (cận thị)</span>
+                        <span class="short-label">Cận thị</span>
+                    </button>
+                    <button data-mode="hyperopia">
+                        <span class="full-label">Hyperopia (viễn thị)</span>
+                        <span class="short-label">Viễn thị</span>
+                    </button>
+                    <button data-mode="presbyopia">
+                        <span class="full-label">Presbyopia (lão thị)</span>
+                        <span class="short-label">Lão thị</span>
+                    </button>
                 </div>
                 <div class="button-row">
-                    <button data-mode="protanopia">Protanopia (đỏ)</button>
-                    <button data-mode="deuteranopia">Deuteranopia (lục)</button>
-                    <button data-mode="tritanopia">Tritanopia (lam)</button>
-                    <button data-mode="achromatopsia">Achromatopsia (toàn phần)</button>
+                    <button data-mode="protanopia">
+                        <span class="full-label">Protanopia (đỏ)</span>
+                        <span class="short-label">Mù đỏ</span>
+                    </button>
+                    <button data-mode="deuteranopia">
+                        <span class="full-label">Deuteranopia (lục)</span>
+                        <span class="short-label">Mù lục</span>
+                    </button>
+                    <button data-mode="tritanopia">
+                        <span class="full-label">Tritanopia (lam)</span>
+                        <span class="short-label">Mù lam</span>
+                    </button>
+                    <button data-mode="achromatopsia">
+                        <span class="full-label">Achromatopsia (toàn phần)</span>
+                        <span class="short-label">Mù màu TP</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -299,6 +441,15 @@
             'mode.deuteranopia': 'Deuteranopia (lục)',
             'mode.tritanopia': 'Tritanopia (lam)',
             'mode.achromatopsia': 'Achromatopsia (toàn phần)',
+            // Short labels cho mobile
+            'mode.normal.short': 'Chính thị',
+            'mode.myopia.short': 'Cận thị',
+            'mode.hyperopia.short': 'Viễn thị',
+            'mode.presbyopia.short': 'Lão thị',
+            'mode.protanopia.short': 'Mù đỏ',
+            'mode.deuteranopia.short': 'Mù lục',
+            'mode.tritanopia.short': 'Mù lam',
+            'mode.achromatopsia.short': 'Mù màu TP',
         },
         en: {
             'ui.back': '← Back',
@@ -315,6 +466,15 @@
             'mode.deuteranopia': 'Deuteranopia (green)',
             'mode.tritanopia': 'Tritanopia (blue)',
             'mode.achromatopsia': 'Achromatopsia (total)',
+            // Short labels cho mobile
+            'mode.normal.short': 'Normal',
+            'mode.myopia.short': 'Myopia',
+            'mode.hyperopia.short': 'Hyperopia',
+            'mode.presbyopia.short': 'Presbyopia',
+            'mode.protanopia.short': 'Red blind',
+            'mode.deuteranopia.short': 'Green blind',
+            'mode.tritanopia.short': 'Blue blind',
+            'mode.achromatopsia.short': 'Total blind',
         }
     };
 
@@ -361,7 +521,10 @@
 
         buttons.forEach(btn => {
             const key = btn.getAttribute('data-mode');
-            btn.textContent = t(`mode.${key}`);
+            const fullLabel = btn.querySelector('.full-label');
+            const shortLabel = btn.querySelector('.short-label');
+            if (fullLabel) fullLabel.textContent = t(`mode.${key}`);
+            if (shortLabel) shortLabel.textContent = t(`mode.${key}.short`);
         });
 
         const mode = MODES[currentModeKey];
